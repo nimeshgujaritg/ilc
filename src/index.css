@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ilc-purple: #360e4a;
+  --color-ilc-gold: #EDA300;
+  --color-ilc-cream: #FDFDFD;
+  --font-serif: "Cormorant Garamond", serif;
+  --font-sans: "Montserrat", sans-serif;
+}
+
+@layer utilities {
+  .border-hairline { border-width: 0.5px; }
+  .text-luxury { letter-spacing: 0.2em; text-transform: uppercase; font-weight: 700; }
+  .glass-card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    border: 0.5px solid rgba(54, 14, 74, 0.1);
+  }
+}
