@@ -1,32 +1,33 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
+import { ProtectedRoute, PublicRoute, RoleRoute } from './guards/RouteGuard';
+
 import Login from './pages/Login';
+import ResetPassword from './pages/ResetPassword';
+import PendingApproval from './pages/PendingApproval';
 import DashboardLayout from './components/DashboardLayout';
 import CeoDashboard from './pages/CeoDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import EventsPage from './pages/EventsPage';
 import MembersPage from './pages/MembersPage';
 
-// Wraps any route that requires login
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useAuthStore();
-  return isAuthenticated ? children : <Navigate to="/" replace />;
-};
-
-// Redirect already-logged-in users away from login page
-const PublicRoute = ({ children }) => {
-  const { isAuthenticated, user } = useAuthStore();
-  if (!isAuthenticated) return children;
-  return <Navigate to={user?.role === 'SUPER_ADMIN' ? '/admin-dashboard' : '/dashboard'} replace />;
-};
-
 function App() {
+  const { user } = useAuthStore();
+
+  // Determine where to send user after login
+  const getDefaultRoute = () => {
+    if (!user) return '/';
+    if (user.isFirstLogin) return '/reset-password';
+    if (user.profileStatus !== 'APPROVED') return '/pending';
+    return user.role === 'ADMIN' ? '/admin-dashboard' : '/dashboard';
+  };
+
   return (
     <BrowserRouter>
       <Routes>
 
-        {/* Public: only accessible when logged OUT */}
+        {/* Public — login page */}
         <Route
           path="/"
           element={
@@ -36,7 +37,27 @@ function App() {
           }
         />
 
-        {/* Protected: only accessible when logged IN */}
+        {/* Force password reset */}
+        <Route
+          path="/reset-password"
+          element={
+            <ProtectedRoute>
+              <ResetPassword />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Pending approval */}
+        <Route
+          path="/pending"
+          element={
+            <ProtectedRoute>
+              <PendingApproval />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected dashboard routes */}
         <Route
           element={
             <ProtectedRoute>
@@ -44,16 +65,27 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="/dashboard" element={<CeoDashboard />} />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/dashboard" element={
+            <RoleRoute allowedRoles={['CEO']}>
+              <CeoDashboard />
+            </RoleRoute>
+          } />
+          <Route path="/admin-dashboard" element={
+            <RoleRoute allowedRoles={['ADMIN']}>
+              <AdminDashboard />
+            </RoleRoute>
+          } />
           <Route path="/events" element={<EventsPage />} />
           <Route path="/members" element={<MembersPage />} />
-          <Route path="/calendar" element={<div className="p-10 font-serif text-3xl text-[#2a0b38]">Calendar View — Coming Soon</div>} />
-          <Route path="/resources" element={<div className="p-10 font-serif text-3xl text-[#2a0b38]">Resources — Coming Soon</div>} />
+          <Route path="/resources" element={
+            <div className="p-10 font-serif text-3xl text-[#2a0b38]">
+              Resources — Coming Soon
+            </div>
+          } />
         </Route>
 
-        {/* Catch-all: redirect unknown paths to login */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Catch all */}
+        <Route path="*" element={<Navigate to={getDefaultRoute()} replace />} />
 
       </Routes>
     </BrowserRouter>
