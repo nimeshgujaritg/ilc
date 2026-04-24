@@ -7,15 +7,24 @@ import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
 import PendingApproval from './pages/PendingApproval';
 import DashboardLayout from './components/DashboardLayout';
+
+// CEO pages
 import CeoDashboard from './pages/CeoDashboard';
-import AdminDashboard from './pages/AdminDashboard';
+import CeoProfile from './pages/CeoProfile';
 import EventsPage from './pages/EventsPage';
 import MembersPage from './pages/MembersPage';
+
+// Admin pages
+import AdminOverview from './pages/AdminOverview';
+import AdminMembers from './pages/AdminMembers';
+import AddMemberPage from './pages/AddMemberPage';
+import BulkUploadPage from './pages/BulkUploadPage';
+import AdminSpocs from './pages/AdminSpocs';
+import AuditLogsPage from './pages/AuditLogsPage';
 
 function App() {
   const { user } = useAuthStore();
 
-  // Determine where to send user after login
   const getDefaultRoute = () => {
     if (!user) return '/';
     if (user.isFirstLogin) return '/reset-password';
@@ -27,64 +36,33 @@ function App() {
     <BrowserRouter>
       <Routes>
 
-        {/* Public — login page */}
-        <Route
-          path="/"
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          }
-        />
+        <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/reset-password" element={<ProtectedRoute><ResetPassword /></ProtectedRoute>} />
+        <Route path="/pending" element={<ProtectedRoute><PendingApproval /></ProtectedRoute>} />
 
-        {/* Force password reset */}
-        <Route
-          path="/reset-password"
-          element={
-            <ProtectedRoute>
-              <ResetPassword />
-            </ProtectedRoute>
-          }
-        />
+        <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
 
-        {/* Pending approval */}
-        <Route
-          path="/pending"
-          element={
-            <ProtectedRoute>
-              <PendingApproval />
-            </ProtectedRoute>
-          }
-        />
+          {/* ── Shared — profile works for both CEO and ADMIN */}
+          <Route path="/profile" element={<CeoProfile />} />
 
-        {/* Protected dashboard routes */}
-        <Route
-          element={
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/dashboard" element={
-            <RoleRoute allowedRoles={['CEO']}>
-              <CeoDashboard />
-            </RoleRoute>
-          } />
-          <Route path="/admin-dashboard" element={
-            <RoleRoute allowedRoles={['ADMIN']}>
-              <AdminDashboard />
-            </RoleRoute>
-          } />
-          <Route path="/events" element={<EventsPage />} />
-          <Route path="/members" element={<MembersPage />} />
+          {/* ── CEO routes */}
+          <Route path="/dashboard" element={<RoleRoute allowedRoles={['CEO']}><CeoDashboard /></RoleRoute>} />
+          <Route path="/events"    element={<EventsPage />} />
+          <Route path="/members"   element={<MembersPage />} />
           <Route path="/resources" element={
-            <div className="p-10 font-serif text-3xl text-[#2a0b38]">
-              Resources — Coming Soon
-            </div>
+            <div className="p-10 font-serif text-3xl text-[#2a0b38]">Resources — Coming Soon</div>
           } />
+
+          {/* ── ADMIN routes */}
+          <Route path="/admin-dashboard"  element={<RoleRoute allowedRoles={['ADMIN']}><AdminOverview /></RoleRoute>} />
+          <Route path="/admin/members"    element={<RoleRoute allowedRoles={['ADMIN']}><AdminMembers /></RoleRoute>} />
+          <Route path="/admin/add-member" element={<RoleRoute allowedRoles={['ADMIN']}><AddMemberPage /></RoleRoute>} />
+          <Route path="/admin/bulk-upload"element={<RoleRoute allowedRoles={['ADMIN']}><BulkUploadPage /></RoleRoute>} />
+          <Route path="/admin/spocs"      element={<RoleRoute allowedRoles={['ADMIN']}><AdminSpocs /></RoleRoute>} />
+          <Route path="/admin/audit-logs" element={<RoleRoute allowedRoles={['ADMIN']}><AuditLogsPage /></RoleRoute>} />
+
         </Route>
 
-        {/* Catch all */}
         <Route path="*" element={<Navigate to={getDefaultRoute()} replace />} />
 
       </Routes>

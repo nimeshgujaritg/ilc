@@ -141,7 +141,7 @@ const Login = () => {
 
                     <div className="mt-14 text-center">
                         <p className="text-[12px] font-bold uppercase text-gray-300">
-                            Digital Concierge: <a href="mailto:concierge@ilc.in" className="text-gray-400 hover:text-[#2a0b38] transition-colors underline underline-offset-8">concierge@ilc.in</a>
+                            Digital Concierge: <a href="mailto:info@et.edage.com" className="text-gray-400 hover:text-[#2a0b38] transition-colors underline underline-offset-8">info@et.edage.com</a>
                         </p>
                     </div>
                 </div>
