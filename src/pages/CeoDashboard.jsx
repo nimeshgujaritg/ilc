@@ -27,19 +27,22 @@ const CeoDashboard = () => {
   const [events, setEvents] = useState([]);
   const [members, setMembers] = useState([]);
   const [resources, setResources] = useState([]);
-  const [loading, setLoading] = useState(true);
+const [loading, setLoading] = useState(true);
+const [spoc, setSpoc] = useState(null);
 
   useEffect(() => {
     const fetchAll = async () => {
-      try {
-        const [evRes, memRes, resRes] = await Promise.all([
-          client.get('/events'),
-          client.get('/admin/members-list'),
-          client.get('/resources'),
-        ]);
-        setEvents(evRes.data.events);
-        setMembers(memRes.data.members);
-        setResources(resRes.data.resources);
+  try {
+    const [evRes, memRes, resRes, meRes] = await Promise.all([
+      client.get('/events'),
+      client.get('/admin/members-list'),
+      client.get('/resources'),
+      client.get('/auth/me'),
+    ]);
+    setEvents(evRes.data.events);
+    setMembers(memRes.data.members);
+    setResources(resRes.data.resources);
+    setSpoc(meRes.data.user.spoc || null);
       } catch (err) {
         console.error('Dashboard fetch error:', err);
       } finally {
@@ -57,26 +60,75 @@ const CeoDashboard = () => {
     <div className="py-12 space-y-12 max-w-6xl">
 
       {/* ── HEADER */}
-      <div className="flex items-end justify-between border-b border-gray-100 pb-8">
+<div className="flex flex-col lg:flex-row lg:items-center justify-between border-b border-gray-100 pb-8 gap-4">
+  <div>
+    <p className="text-[#EDA300] text-[10px] font-bold uppercase tracking-widest mb-2">
+      Executive Dashboard
+    </p>
+    <h1 className="text-4xl font-serif text-[#2a0b38]">
+      Welcome back, {firstName}.
+    </h1>
+    <p className="text-gray-400 text-sm mt-2">
+      Here's what's happening in the India Leadership Council.
+    </p>
+  </div>
+
+  <div className="flex items-center gap-4">
+    {/* SPOC mini widget */}
+    {spoc && (
+      <div className="hidden lg:flex items-center gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm">
+        {spoc.photo_url ? (
+          <img src={spoc.photo_url} alt={spoc.name} className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-50" />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-[#1a0525] text-white flex items-center justify-center text-sm font-bold">
+            {spoc.name?.charAt(0)}
+          </div>
+        )}
         <div>
-          <p className="text-[#EDA300] text-[10px] font-bold uppercase tracking-widest mb-2">
-            Executive Dashboard
-          </p>
-          <h1 className="text-4xl font-serif text-[#2a0b38]">
-            Welcome back, {firstName}.
-          </h1>
-          <p className="text-gray-400 text-sm mt-2">
-            Here's what's happening in the India Leadership Council.
-          </p>
+          <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Your SPOC</p>
+          <p className="text-sm font-bold text-[#2a0b38]">{spoc.name}</p>
+          {spoc.title && <p className="text-[10px] text-[#EDA300] font-bold uppercase tracking-widest">{spoc.title}</p>}
         </div>
-        <button
-          onClick={() => navigate('/events')}
-          className="flex items-center gap-2 bg-[#1a0525] hover:bg-[#2a0b38] text-white px-6 py-3 rounded-sm text-[11px] font-bold uppercase tracking-widest transition-all"
-        >
-          View Events
-          <ChevronRight className="w-4 h-4 text-[#EDA300]" />
-        </button>
+<div className="flex items-center gap-2 ml-2">
+  {spoc.email && (
+    <div className="relative group">
+      <button
+        onClick={() => window.open(`mailto:${spoc.email}`)}
+        className="w-8 h-8 bg-[#1a0525] hover:bg-[#2a0b38] text-white rounded-full flex items-center justify-center transition-all"
+      >
+        <span className="text-xs">✉</span>
+      </button>
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-[#1a0525] text-white text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
+        {spoc.email}
       </div>
+    </div>
+  )}
+  {spoc.phone && (
+    <div className="relative group">
+      <button
+        onClick={() => window.open(`tel:${spoc.phone}`)}
+        className="w-8 h-8 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full flex items-center justify-center transition-all"
+      >
+        <span className="text-xs">📞</span>
+      </button>
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-[#1a0525] text-white text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
+        {spoc.phone}
+      </div>
+    </div>
+  )}
+</div>
+      </div>
+    )}
+
+    <button
+      onClick={() => navigate('/events')}
+      className="flex items-center gap-2 bg-[#1a0525] hover:bg-[#2a0b38] text-white px-6 py-3 rounded-sm text-[11px] font-bold uppercase tracking-widest transition-all"
+    >
+      View Events
+      <ChevronRight className="w-4 h-4 text-[#EDA300]" />
+    </button>
+  </div>
+</div>
 
       {/* ── STATS */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -133,6 +185,7 @@ const CeoDashboard = () => {
         </div>
       </div>
 
+
       {/* ── UPCOMING EVENTS */}
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -162,14 +215,27 @@ const CeoDashboard = () => {
                 onClick={() => navigate(`/events/${event.id}`)}
                 className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#2a0b38]/20 transition-all text-left group"
               >
-                <div className="bg-[#1a0525] px-6 py-5">
-                  <p className="text-[#EDA300] text-[9px] font-bold uppercase tracking-widest mb-1">
-                    {new Date(event.date).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'long', year: 'numeric' })}
-                  </p>
-                  <p className="text-white text-3xl font-serif font-bold">
-                    {new Date(event.date).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric' })}
-                  </p>
-                </div>
+                <div className="relative h-36 overflow-hidden">
+  {event.image_url ? (
+    <img
+      src={event.image_url}
+      alt={event.title}
+      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+    />
+  ) : (
+    <div className="w-full h-full bg-[#1a0525] flex items-center justify-center">
+      <Calendar className="w-8 h-8 text-[#EDA300]/20" />
+    </div>
+  )}
+  <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 text-center shadow-sm">
+    <p className="text-[#EDA300] text-[9px] font-bold uppercase tracking-widest">
+      {new Date(event.date).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short' })}
+    </p>
+    <p className="text-[#2a0b38] text-xl font-serif font-bold leading-none">
+      {new Date(event.date).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric' })}
+    </p>
+  </div>
+</div>
                 <div className="p-6 space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <h4 className="text-sm font-serif text-[#2a0b38] group-hover:text-[#1a0525] leading-tight">
@@ -203,7 +269,7 @@ const CeoDashboard = () => {
       </div>
 
       {/* ── PREMIUM BANNER */}
-      <div className="bg-[#1a0525] rounded-xl p-10 flex items-center justify-between gap-8 relative overflow-hidden">
+      <div className="bg-[#1a0525] rounded-xl p-8 lg:p-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-[#EDA300] opacity-[0.03] rounded-full -mr-32 -mt-32" />
         <div className="relative z-10 space-y-3">
           <p className="text-[#EDA300] text-[9px] font-bold uppercase tracking-widest">Exclusive Access</p>

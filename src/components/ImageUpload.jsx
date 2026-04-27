@@ -1,34 +1,27 @@
 import React, { useState, useRef } from 'react';
-import { Upload, X, Image } from 'lucide-react';
-import client from '../api/client';
+import { Upload, X } from 'lucide-react';
 
 const ImageUpload = ({ value, onChange, label = 'Photo' }) => {
-  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const fileRef = useRef(null);
 
-  const handleFile = async (e) => {
+  const handleFile = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    setUploading(true);
-    setError('');
-
-    try {
-      const formData = new FormData();
-      formData.append('image', file);
-
-      const res = await client.post('/upload/image', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-
-      onChange(res.data.url);
-    } catch (err) {
-      setError('Upload failed. Please try again.');
-    } finally {
-      setUploading(false);
-      e.target.value = '';
+    // Max 2MB
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Image must be under 2MB');
+      return;
     }
+
+    setError('');
+    const reader = new FileReader();
+    reader.onload = () => {
+      onChange(reader.result); // base64 string like "data:image/jpeg;base64,..."
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   const handleRemove = () => {
@@ -58,18 +51,12 @@ const ImageUpload = ({ value, onChange, label = 'Photo' }) => {
         </div>
       ) : (
         <button
+          type="button"
           onClick={() => fileRef.current?.click()}
-          disabled={uploading}
-          className="flex items-center gap-3 px-4 py-3 border-2 border-dashed border-gray-200 rounded-xl hover:border-[#EDA300] hover:bg-[#EDA300]/5 transition-all disabled:opacity-50 w-full"
+          className="flex items-center gap-3 px-4 py-3 border-2 border-dashed border-gray-200 rounded-xl hover:border-[#EDA300] hover:bg-[#EDA300]/5 transition-all w-full"
         >
-          {uploading ? (
-            <div className="w-4 h-4 border-2 border-[#EDA300] border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <Upload className="w-4 h-4 text-gray-400" />
-          )}
-          <span className="text-sm text-gray-400">
-            {uploading ? 'Uploading...' : 'Click to upload image'}
-          </span>
+          <Upload className="w-4 h-4 text-gray-400" />
+          <span className="text-sm text-gray-400">Click to upload image (max 2MB)</span>
         </button>
       )}
 

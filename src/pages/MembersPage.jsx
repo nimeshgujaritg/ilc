@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Search, Users } from 'lucide-react';
 import client from '../api/client';
 
+const LinkedInIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-3 h-3 fill-current">
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z M4 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+  </svg>
+);
+
 const MembersPage = () => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +44,6 @@ const MembersPage = () => {
   return (
     <div className="py-12 space-y-10">
 
-      {/* Header */}
       <div>
         <p className="text-[#EDA300] text-[10px] font-bold uppercase tracking-widest mb-2">
           Council Directory
@@ -49,8 +54,7 @@ const MembersPage = () => {
         </p>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
+      <div className="relative w-full max-w-md">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 w-4 h-4" />
         <input
           type="text"
@@ -61,12 +65,10 @@ const MembersPage = () => {
         />
       </div>
 
-      {/* Count */}
       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-300">
         {filtered.length} {filtered.length === 1 ? 'Member' : 'Members'}
       </p>
 
-      {/* Empty state */}
       {filtered.length === 0 && (
         <div className="bg-white border border-gray-100 rounded-xl p-16 text-center shadow-sm">
           <Users className="w-10 h-10 text-gray-200 mx-auto mb-4" />
@@ -76,7 +78,6 @@ const MembersPage = () => {
         </div>
       )}
 
-      {/* Grid */}
       {filtered.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filtered.map(member => (
@@ -84,7 +85,6 @@ const MembersPage = () => {
               key={member.id}
               className="bg-white border border-gray-100 rounded-xl p-6 text-center hover:shadow-md hover:border-[#2a0b38]/20 transition-all group"
             >
-              {/* Avatar */}
               {member.photo_url ? (
                 <img
                   src={member.photo_url}
@@ -97,7 +97,6 @@ const MembersPage = () => {
                 </div>
               )}
 
-              {/* Info */}
               <h4 className="text-sm font-bold text-[#2a0b38] mb-1 leading-tight">
                 {member.name}
               </h4>
@@ -107,10 +106,19 @@ const MembersPage = () => {
                 </p>
               )}
 
-              {/* Member since */}
               <p className="text-[10px] text-gray-300 mt-2">
                 Member since {new Date(member.created_at).getFullYear()}
               </p>
+
+              {member.linkedin_url && (
+                <button
+                  onClick={() => window.open(member.linkedin_url, '_blank')}
+                  className="mt-3 flex items-center gap-1.5 mx-auto text-[10px] font-bold uppercase tracking-widest text-blue-500 hover:text-blue-600 transition-colors"
+                >
+                  <LinkedInIcon />
+                  Connect on LinkedIn
+                </button>
+              )}
             </div>
           ))}
         </div>

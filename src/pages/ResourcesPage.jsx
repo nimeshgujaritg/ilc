@@ -49,7 +49,7 @@ const ResourcesPage = () => {
   return (
     <div className="py-12 space-y-16">
 
-      {/* ── RESOURCES SECTION */}
+      {/* ── RESOURCES */}
       <div className="space-y-8">
         <div>
           <p className="text-[#EDA300] text-[10px] font-bold uppercase tracking-widest mb-2">Library</p>
@@ -57,7 +57,6 @@ const ResourcesPage = () => {
           <p className="text-gray-400 text-sm mt-2">Curated resources exclusively for ILC members.</p>
         </div>
 
-        {/* Category filter */}
         <div className="flex items-center gap-2 flex-wrap">
           {CATEGORIES.map(cat => (
             <button
@@ -74,58 +73,75 @@ const ResourcesPage = () => {
           ))}
         </div>
 
-        {/* Resources grid */}
         {filteredResources.length === 0 ? (
           <div className="bg-white border border-gray-100 rounded-xl p-16 text-center shadow-sm">
             <BookOpen className="w-10 h-10 text-gray-200 mx-auto mb-4" />
             <p className="text-gray-400 text-sm">No resources in this category yet.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {filteredResources.map(resource => (
               <div
                 key={resource.id}
-                className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-[#2a0b38]/20 transition-all group"
+                className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#2a0b38]/20 transition-all group"
               >
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full border ${
-                    CATEGORY_COLORS[resource.category] || 'bg-gray-50 text-gray-500 border-gray-200'
-                  }`}>
-                    {resource.category}
-                  </span>
+                {/* Resource image */}
+                {resource.image_url ? (
+                  <img
+                    src={resource.image_url}
+                    alt={resource.title}
+                    className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                ) : (
+                  <div className="w-full h-40 bg-gradient-to-br from-[#1a0525] to-[#2a0b38] flex items-center justify-center">
+                    <BookOpen className="w-10 h-10 text-[#EDA300]/30" />
+                  </div>
+                )}
+
+                <div className="p-6">
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full border ${
+                      CATEGORY_COLORS[resource.category] || 'bg-gray-50 text-gray-500 border-gray-200'
+                    }`}>
+                      {resource.category}
+                    </span>
+                    {resource.link && (
+                      <button
+                        onClick={() => window.open(resource.link, '_blank')}
+                        className="text-gray-300 hover:text-[#EDA300] transition-colors"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  <h3 className="text-base font-serif text-[#2a0b38] mb-2 group-hover:text-[#1a0525]">
+                    {resource.title}
+                  </h3>
+
+                  {resource.description && (
+                    <p className="text-gray-400 text-xs leading-relaxed line-clamp-3">
+                      {resource.description}
+                    </p>
+                  )}
+
                   {resource.link && (
                     <button
                       onClick={() => window.open(resource.link, '_blank')}
-                      className="text-gray-300 hover:text-[#EDA300] transition-colors"
+                      className="inline-flex items-center gap-1.5 mt-4 text-[10px] font-bold uppercase tracking-widest text-[#2a0b38] hover:text-[#EDA300] transition-colors"
                     >
-                      <ExternalLink className="w-4 h-4" />
+                      View Resource
+                      <ExternalLink className="w-3 h-3" />
                     </button>
                   )}
                 </div>
-                <h3 className="text-base font-serif text-[#2a0b38] mb-2 group-hover:text-[#1a0525]">
-                  {resource.title}
-                </h3>
-                {resource.description && (
-                  <p className="text-gray-400 text-xs leading-relaxed line-clamp-3">
-                    {resource.description}
-                  </p>
-                )}
-                {resource.link && (
-                  <button
-                    onClick={() => window.open(resource.link, '_blank')}
-                    className="inline-flex items-center gap-1.5 mt-4 text-[10px] font-bold uppercase tracking-widest text-[#2a0b38] hover:text-[#EDA300] transition-colors"
-                  >
-                    View Resource
-                    <ExternalLink className="w-3 h-3" />
-                  </button>
-                )}
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* ── GLIMPSES SECTION */}
+      {/* ── GLIMPSES */}
       <div className="space-y-8">
         <div>
           <p className="text-[#EDA300] text-[10px] font-bold uppercase tracking-widest mb-2">Gallery</p>
@@ -139,7 +155,7 @@ const ResourcesPage = () => {
             <p className="text-gray-400 text-sm">No glimpses added yet.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {glimpses.map(glimpse => (
               <button
                 key={glimpse.id}

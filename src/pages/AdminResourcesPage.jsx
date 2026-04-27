@@ -1,29 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Trash2, X, ChevronRight, BookOpen, Image } from 'lucide-react';
 import client from '../api/client';
+import ImageUpload from '../components/ImageUpload';
 
 const CATEGORIES = ['Article', 'Report', 'Video', 'Tool'];
-
-const EMPTY_RESOURCE = { title: '', description: '', link: '', category: 'Article' };
+const EMPTY_RESOURCE = { title: '', description: '', link: '', category: 'Article', image_url: '' };
 const EMPTY_GLIMPSE = { photo_url: '', caption: '', event_name: '' };
 
 const AdminResourcesPage = () => {
   const [resources, setResources] = useState([]);
   const [glimpses, setGlimpses] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Resource modal
   const [showResourceModal, setShowResourceModal] = useState(false);
   const [resourceForm, setResourceForm] = useState(EMPTY_RESOURCE);
   const [resourceError, setResourceError] = useState('');
   const [savingResource, setSavingResource] = useState(false);
-
-  // Glimpse modal
   const [showGlimpseModal, setShowGlimpseModal] = useState(false);
   const [glimpseForm, setGlimpseForm] = useState(EMPTY_GLIMPSE);
   const [glimpseError, setGlimpseError] = useState('');
   const [savingGlimpse, setSavingGlimpse] = useState(false);
-
   const [deletingId, setDeletingId] = useState(null);
 
   const fetchAll = async () => {
@@ -43,7 +38,6 @@ const AdminResourcesPage = () => {
 
   useEffect(() => { fetchAll(); }, []);
 
-  // ── RESOURCE HANDLERS
   const handleSaveResource = async () => {
     if (!resourceForm.title.trim()) return setResourceError('Title is required.');
     setSavingResource(true);
@@ -73,9 +67,8 @@ const AdminResourcesPage = () => {
     }
   };
 
-  // ── GLIMPSE HANDLERS
   const handleSaveGlimpse = async () => {
-    if (!glimpseForm.photo_url.trim()) return setGlimpseError('Photo URL is required.');
+    if (!glimpseForm.photo_url) return setGlimpseError('Photo is required.');
     setSavingGlimpse(true);
     setGlimpseError('');
     try {
@@ -114,7 +107,7 @@ const AdminResourcesPage = () => {
   return (
     <div className="py-12 space-y-16">
 
-      {/* ── RESOURCES SECTION */}
+      {/* ── RESOURCES */}
       <div className="space-y-8">
         <div className="flex items-start justify-between">
           <div>
@@ -137,51 +130,39 @@ const AdminResourcesPage = () => {
             <p className="text-gray-400 text-sm">No resources yet.</p>
           </div>
         ) : (
-          <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-50">
-                  <th className="text-left px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">Title</th>
-                  <th className="text-left px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">Category</th>
-                  <th className="text-left px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">Link</th>
-                  <th className="px-6 py-4" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {resources.map(r => (
-                  <tr key={r.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-8 py-4">
-                      <p className="text-sm font-bold text-[#2a0b38]">{r.title}</p>
-                      {r.description && (
-                        <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{r.description}</p>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-[10px] font-bold uppercase tracking-widest bg-gray-100 text-gray-500 px-2 py-1 rounded-full">
+          <div className="grid grid-cols-2 gap-4">
+            {resources.map(r => (
+              <div key={r.id} className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all">
+                {r.image_url && (
+                  <img src={r.image_url} alt={r.title} className="w-full h-36 object-cover" />
+                )}
+                <div className="p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <span className="text-[9px] font-bold uppercase tracking-widest bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
                         {r.category}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 text-xs text-gray-400 max-w-[200px] truncate">
-                      {r.link || <span className="text-gray-200">—</span>}
-                    </td>
-                    <td className="px-6 py-4">
-                      <button
-                        onClick={() => handleDeleteResource(r.id)}
-                        disabled={deletingId === r.id}
-                        className="p-2 text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <p className="text-sm font-bold text-[#2a0b38] mt-2">{r.title}</p>
+                      {r.description && (
+                        <p className="text-xs text-gray-400 mt-1 line-clamp-2">{r.description}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleDeleteResource(r.id)}
+                      disabled={deletingId === r.id}
+                      className="p-2 text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50 shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
-      {/* ── GLIMPSES SECTION */}
+      {/* ── GLIMPSES */}
       <div className="space-y-8">
         <div className="flex items-start justify-between">
           <div>
@@ -207,11 +188,7 @@ const AdminResourcesPage = () => {
           <div className="grid grid-cols-4 gap-4">
             {glimpses.map(g => (
               <div key={g.id} className="relative group rounded-xl overflow-hidden aspect-square shadow-sm">
-                <img
-                  src={g.photo_url}
-                  alt={g.caption || 'Glimpse'}
-                  className="w-full h-full object-cover"
-                />
+                <img src={g.photo_url} alt={g.caption || 'Glimpse'} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center">
                   <button
                     onClick={() => handleDeleteGlimpse(g.id)}
@@ -235,7 +212,7 @@ const AdminResourcesPage = () => {
       {/* ── RESOURCE MODAL */}
       {showResourceModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100">
               <h2 className="text-xl font-serif text-[#2a0b38]">Add Resource</h2>
               <button onClick={() => setShowResourceModal(false)} className="text-gray-400 hover:text-gray-600">
@@ -248,6 +225,11 @@ const AdminResourcesPage = () => {
                   <p className="text-xs text-red-600">{resourceError}</p>
                 </div>
               )}
+              <ImageUpload
+                value={resourceForm.image_url}
+                onChange={url => setResourceForm(p => ({ ...p, image_url: url }))}
+                label="Resource Image (optional)"
+              />
               <div className="space-y-2">
                 <label className="text-[11px] font-bold tracking-widest text-gray-500 uppercase">Title *</label>
                 <input
@@ -288,10 +270,7 @@ const AdminResourcesPage = () => {
               </div>
             </div>
             <div className="px-8 py-6 border-t border-gray-100 flex justify-end gap-3">
-              <button
-                onClick={() => setShowResourceModal(false)}
-                className="px-6 py-3 text-[11px] font-bold uppercase tracking-widest text-gray-400 hover:text-gray-600"
-              >
+              <button onClick={() => setShowResourceModal(false)} className="px-6 py-3 text-[11px] font-bold uppercase tracking-widest text-gray-400 hover:text-gray-600">
                 Cancel
               </button>
               <button
@@ -323,23 +302,11 @@ const AdminResourcesPage = () => {
                   <p className="text-xs text-red-600">{glimpseError}</p>
                 </div>
               )}
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold tracking-widest text-gray-500 uppercase">Photo URL *</label>
-                <input
-                  value={glimpseForm.photo_url}
-                  onChange={e => setGlimpseForm(p => ({ ...p, photo_url: e.target.value }))}
-                  placeholder="https://..."
-                  className={inputBase}
-                />
-                {glimpseForm.photo_url && (
-                  <img
-                    src={glimpseForm.photo_url}
-                    alt="Preview"
-                    className="w-full h-40 object-cover rounded-lg mt-2"
-                    onError={e => e.target.style.display = 'none'}
-                  />
-                )}
-              </div>
+              <ImageUpload
+                value={glimpseForm.photo_url}
+                onChange={url => setGlimpseForm(p => ({ ...p, photo_url: url }))}
+                label="Photo *"
+              />
               <div className="space-y-2">
                 <label className="text-[11px] font-bold tracking-widest text-gray-500 uppercase">Event Name</label>
                 <input
@@ -360,10 +327,7 @@ const AdminResourcesPage = () => {
               </div>
             </div>
             <div className="px-8 py-6 border-t border-gray-100 flex justify-end gap-3">
-              <button
-                onClick={() => setShowGlimpseModal(false)}
-                className="px-6 py-3 text-[11px] font-bold uppercase tracking-widest text-gray-400 hover:text-gray-600"
-              >
+              <button onClick={() => setShowGlimpseModal(false)} className="px-6 py-3 text-[11px] font-bold uppercase tracking-widest text-gray-400 hover:text-gray-600">
                 Cancel
               </button>
               <button

@@ -128,6 +128,38 @@ const CeoProfile = () => {
                   <p className="text-sm text-gray-700">{profile?.role}</p>
                 </div>
               </div>
+              <div className="flex items-center gap-3 col-span-2">
+  <div className="w-4 h-4 shrink-0 flex items-center justify-center">
+    <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-300 fill-current">
+      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z M4 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+    </svg>
+  </div>
+<div className="flex-1">
+    <p className="text-[9px] font-bold tracking-widest text-gray-400 uppercase">LinkedIn URL</p>
+    <div className="flex items-center gap-3">
+      <input
+        type="text"
+        value={profile?.linkedin_url || ''}
+        onChange={e => setProfile(p => ({ ...p, linkedin_url: e.target.value }))}
+        placeholder="https://linkedin.com/in/yourname"
+        className="text-sm text-gray-700 bg-transparent border-b border-gray-100 outline-none focus:border-[#2a0b38] w-full py-1 transition-colors"
+      />
+      <button
+        onClick={async () => {
+          try {
+            await client.patch('/auth/linkedin', { linkedin_url: profile?.linkedin_url || '' });
+            alert('LinkedIn URL saved!');
+          } catch (err) {
+            alert('Failed to save');
+          }
+        }}
+        className="text-[10px] font-bold uppercase tracking-widest text-white bg-[#2a0b38] hover:bg-[#1a0525] px-3 py-1.5 rounded-sm transition-all shrink-0"
+      >
+        Save
+      </button>
+    </div>
+  </div>
+</div>
             </div>
 
             {/* Change password toggle */}

@@ -78,8 +78,7 @@ const CalendarView = ({ events, navigate }) => {
           const isToday = dateKey === todayKey;
 
           return (
-            <div key={idx} className={`min-h-[100px] p-2 border-b border-r border-gray-50 ${!isCurrentMonth ? 'bg-gray-50/30' : ''}`}>
-              {isCurrentMonth && (
+<div key={idx} className={`min-h-[60px] lg:min-h-[100px] p-1 lg:p-2 border-b border-r border-gray-50 ${!isCurrentMonth ? 'bg-gray-50/30' : ''}`}>              {isCurrentMonth && (
                 <>
                   <div className={`w-7 h-7 flex items-center justify-center rounded-full mb-1 ${isToday ? 'bg-[#2a0b38] text-white' : 'text-gray-500'}`}>
                     <span className="text-xs font-bold">{dayNum}</span>
@@ -136,7 +135,7 @@ const ListView = ({ events, navigate }) => {
   );
 
   return (
-    <div className="grid grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
       {events.map(event => {
         const spotsLeft = event.capacity ? event.capacity - event.booking_count : null;
         const isFull = spotsLeft !== null && spotsLeft <= 0;
@@ -277,7 +276,7 @@ const EventsPage = () => {
   return (
     <div className="py-12 space-y-10">
 
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
         <div>
           <p className="text-[#EDA300] text-[10px] font-bold uppercase tracking-widest mb-2">Calendar</p>
           <h1 className="text-4xl font-serif text-[#2a0b38]">Upcoming Events</h1>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Calendar, Plus, Pencil, Trash2, X, ChevronRight } from 'lucide-react';
+import { Calendar, Plus, Pencil, Trash2, X, ChevronRight, Users } from 'lucide-react';
 import client from '../api/client';
 import ImageUpload from '../components/ImageUpload';
 
@@ -26,6 +26,9 @@ const AdminEventsPage = () => {
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [attendeesModal, setAttendeesModal] = useState(null);
+  const [attendees, setAttendees] = useState([]);
+  const [attendeesLoading, setAttendeesLoading] = useState(false);
 
   const fetchEvents = async () => {
     try {
@@ -117,11 +120,25 @@ const AdminEventsPage = () => {
     }
   };
 
+  const openAttendees = async (event) => {
+    setAttendeesModal(event);
+    setAttendeesLoading(true);
+    try {
+      const res = await client.get(`/events/${event.id}`);
+      setAttendees(res.data.attendees);
+    } catch (err) {
+      setAttendees([]);
+    } finally {
+      setAttendeesLoading(false);
+    }
+  };
+
   const inputBase = 'block w-full px-4 py-3 border border-gray-100 rounded-sm bg-[#FAFAFA] text-sm text-gray-800 outline-none focus:ring-1 focus:ring-[#2a0b38] transition-all';
 
   return (
     <div className="py-12 space-y-10">
 
+      {/* Header */}
       <div className="flex items-start justify-between">
         <div>
           <p className="text-[#EDA300] text-[10px] font-bold uppercase tracking-widest mb-2">Admin</p>
@@ -159,18 +176,15 @@ const AdminEventsPage = () => {
         </div>
       )}
 
-      {/* Events grid — card format */}
+      {/* Events grid */}
       {!loading && events.length > 0 && (
         <div className="grid grid-cols-2 gap-6">
           {events.map(event => (
             <div key={event.id} className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all">
-              {/* Event image */}
+
+              {/* Image */}
               {event.image_url ? (
-                <img
-                  src={event.image_url}
-                  alt={event.title}
-                  className="w-full h-48 object-cover"
-                />
+                <img src={event.image_url} alt={event.title} className="w-full h-48 object-cover" />
               ) : (
                 <div className="w-full h-48 bg-[#1a0525] flex items-center justify-center">
                   <Calendar className="w-12 h-12 text-[#EDA300]/30" />
@@ -204,9 +218,18 @@ const AdminEventsPage = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 text-xs text-gray-400">
-                  {event.location && <span>📍 {event.location}</span>}
-                  <span>👥 {event.booking_count}{event.capacity ? ` / ${event.capacity}` : ''} bookings</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 text-xs text-gray-400">
+                    {event.location && <span>📍 {event.location}</span>}
+                    <span>👥 {event.booking_count}{event.capacity ? ` / ${event.capacity}` : ''}</span>
+                  </div>
+                  <button
+                    onClick={() => openAttendees(event)}
+                    className="text-[10px] font-bold uppercase tracking-widest text-[#2a0b38] hover:text-[#EDA300] transition-colors flex items-center gap-1"
+                  >
+                    <Users className="w-3 h-3" />
+                    Attendees
+                  </button>
                 </div>
               </div>
             </div>
@@ -214,7 +237,7 @@ const AdminEventsPage = () => {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -235,7 +258,6 @@ const AdminEventsPage = () => {
                 </div>
               )}
 
-              {/* Image upload */}
               <ImageUpload
                 value={form.image_url}
                 onChange={url => setForm(p => ({ ...p, image_url: url }))}
@@ -246,13 +268,7 @@ const AdminEventsPage = () => {
                 <label className="text-[11px] font-bold tracking-widest text-gray-500 uppercase">
                   Title <span className="text-red-400">*</span>
                 </label>
-                <input
-                  name="title"
-                  value={form.title}
-                  onChange={handleChange}
-                  placeholder="e.g. ILC Leadership Summit 2026"
-                  className={inputBase}
-                />
+                <input name="title" value={form.title} onChange={handleChange} placeholder="e.g. ILC Leadership Summit 2026" className={inputBase} />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -302,6 +318,55 @@ const AdminEventsPage = () => {
                 {saving ? 'Saving...' : editingEvent ? 'Save Changes' : 'Create Event'}
                 <ChevronRight className="w-4 h-4 text-[#EDA300]" />
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Attendees Modal */}
+      {attendeesModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100">
+              <div>
+                <h2 className="text-xl font-serif text-[#2a0b38]">Attendees</h2>
+                <p className="text-xs text-gray-400 mt-1">{attendeesModal.title}</p>
+              </div>
+              <button onClick={() => setAttendeesModal(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 px-8 py-6">
+              {attendeesLoading ? (
+                <p className="text-gray-400 text-sm text-center py-8">Loading...</p>
+              ) : attendees.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+                  <p className="text-gray-400 text-sm">No attendees yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">
+                    {attendees.length} Confirmed
+                  </p>
+                  {attendees.map(person => (
+                    <div key={person.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      {person.photo_url ? (
+                        <img src={person.photo_url} alt={person.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-[#1a0525] text-white flex items-center justify-center text-sm font-bold shrink-0">
+                          {person.initials}
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-bold text-[#2a0b38]">{person.name}</p>
+                        {person.title && <p className="text-[10px] text-gray-400">{person.title}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
