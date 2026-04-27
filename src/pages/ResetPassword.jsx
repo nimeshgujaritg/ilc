@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 const getStrength = (pw) => {
@@ -17,6 +18,9 @@ const COLORS = ['', '#EF4444', '#F59E0B', '#10B981', '#059669'];
 
 const ResetPassword = () => {
   const [current, setCurrent] = useState('');
+  const [showCurrent, setShowCurrent] = useState(false);
+const [showNew, setShowNew] = useState(false);
+const [showConfirm, setShowConfirm] = useState(false);
   const [newPw, setNewPw] = useState('');
   const [confirm, setConfirm] = useState('');
   const [errors, setErrors] = useState({});
@@ -102,25 +106,35 @@ const ResetPassword = () => {
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             <div className="space-y-2">
               <label className="text-[10px] font-bold tracking-[0.2em] text-gray-400 uppercase">Temporary Password</label>
-              <input
-                type="password"
-                value={current}
-                onChange={e => { setCurrent(e.target.value); setErrors(p => ({ ...p, current: null })); }}
-                placeholder="Enter your temp password"
-                className={`block w-full px-4 py-4 border rounded-sm bg-[#FAFAFA] text-gray-800 text-sm focus:bg-white focus:ring-1 outline-none transition-all ${errors.current ? 'border-red-300' : 'border-gray-100 focus:ring-[#2a0b38]'}`}
-              />
+              <div className="relative">
+  <input
+    type={showCurrent ? 'text' : 'password'}
+    value={current}
+    onChange={e => { setCurrent(e.target.value); setErrors(p => ({ ...p, current: null })); }}
+    placeholder="Enter your temp password"
+    className={`block w-full px-4 py-4 pr-12 border rounded-sm bg-[#FAFAFA] text-gray-800 text-sm focus:bg-white focus:ring-1 outline-none transition-all ${errors.current ? 'border-red-300' : 'border-gray-100 focus:ring-[#2a0b38]'}`}
+  />
+  <button type="button" onClick={() => setShowCurrent(p => !p)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+    {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+  </button>
+</div>
               {errors.current && <p className="text-[11px] text-red-500">{errors.current}</p>}
             </div>
 
             <div className="space-y-2">
               <label className="text-[10px] font-bold tracking-[0.2em] text-gray-400 uppercase">New Password</label>
-              <input
-                type="password"
-                value={newPw}
-                onChange={e => { setNewPw(e.target.value); setErrors(p => ({ ...p, newPw: null })); }}
-                placeholder="Min 8 chars, 1 uppercase, 1 number"
-                className={`block w-full px-4 py-4 border rounded-sm bg-[#FAFAFA] text-gray-800 text-sm focus:bg-white focus:ring-1 outline-none transition-all ${errors.newPw ? 'border-red-300' : 'border-gray-100 focus:ring-[#2a0b38]'}`}
-              />
+              <div className="relative">
+  <input
+    type={showNew ? 'text' : 'password'}
+    value={newPw}
+    onChange={e => { setNewPw(e.target.value); setErrors(p => ({ ...p, newPw: null })); }}
+    placeholder="Min 8 chars, 1 uppercase, 1 number"
+    className={`block w-full px-4 py-4 pr-12 border rounded-sm bg-[#FAFAFA] text-gray-800 text-sm focus:bg-white focus:ring-1 outline-none transition-all ${errors.newPw ? 'border-red-300' : 'border-gray-100 focus:ring-[#2a0b38]'}`}
+  />
+  <button type="button" onClick={() => setShowNew(p => !p)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+    {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+  </button>
+</div>
               {newPw && (
                 <div>
                   <div className="flex gap-1 mt-2">
@@ -140,13 +154,18 @@ const ResetPassword = () => {
 
             <div className="space-y-2">
               <label className="text-[10px] font-bold tracking-[0.2em] text-gray-400 uppercase">Confirm Password</label>
-              <input
-                type="password"
-                value={confirm}
-                onChange={e => { setConfirm(e.target.value); setErrors(p => ({ ...p, confirm: null })); }}
-                placeholder="Re-enter new password"
-                className={`block w-full px-4 py-4 border rounded-sm bg-[#FAFAFA] text-gray-800 text-sm focus:bg-white focus:ring-1 outline-none transition-all ${errors.confirm ? 'border-red-300' : 'border-gray-100 focus:ring-[#2a0b38]'}`}
-              />
+              <div className="relative">
+  <input
+    type={showConfirm ? 'text' : 'password'}
+    value={confirm}
+    onChange={e => { setConfirm(e.target.value); setErrors(p => ({ ...p, confirm: null })); }}
+    placeholder="Re-enter new password"
+    className={`block w-full px-4 py-4 pr-12 border rounded-sm bg-[#FAFAFA] text-gray-800 text-sm focus:bg-white focus:ring-1 outline-none transition-all ${errors.confirm ? 'border-red-300' : 'border-gray-100 focus:ring-[#2a0b38]'}`}
+  />
+  <button type="button" onClick={() => setShowConfirm(p => !p)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+    {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+  </button>
+</div>
               {confirm && confirm === newPw && (
                 <p className="text-[11px] text-green-600">✓ Passwords match</p>
               )}

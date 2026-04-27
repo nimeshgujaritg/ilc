@@ -8,24 +8,16 @@ const AdminOverview = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await client.get('/admin/users');
-        setUsers(res.data.users);
-      } catch (err) {
-        console.error('Failed to fetch users', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUsers();
-  }, []);
+const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, pending_form: 0 });
 
-  const totalCount    = users.length;
-  const pendingCount  = users.filter(u => u.profile_status === 'SUBMITTED').length;
-  const approvedCount = users.filter(u => u.profile_status === 'APPROVED').length;
-  const pendingForm   = users.filter(u => u.profile_status === 'PENDING').length;
+useEffect(() => {
+  client.get('/admin/stats')
+    .then(res => setStats(res.data))
+    .catch(err => console.error('Failed to fetch stats', err))
+    .finally(() => setLoading(false));
+}, []);
+
+  const { total: totalCount, pending: pendingCount, approved: approvedCount, pending_form: pendingForm } = stats;
 
   return (
     <div className="max-w-6xl mx-auto space-y-10">
@@ -92,7 +84,7 @@ const AdminOverview = () => {
             </button>
           )}
           <button
-            onClick={() => navigate('/admin/add-member')}
+            onClick={() => navigate('/admin/members')}
             className="bg-gray-50 hover:bg-gray-100 text-gray-600 px-6 py-3 rounded-sm text-[11px] font-bold uppercase tracking-widest transition-all"
           >
             Add New Member

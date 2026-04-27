@@ -30,6 +30,8 @@ const AllMembersTab = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState(null);
+const [selectedIds, setSelectedIds] = useState([]);
+const [bulkApproveLoading, setBulkApproveLoading] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -81,7 +83,49 @@ const AllMembersTab = () => {
       setActionLoading(null);
     }
   };
+const submittedUsers = users.filter(u => u.profile_status === 'SUBMITTED');
 
+const toggleSelect = (id) => {
+  setSelectedIds(prev =>
+    prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+  );
+};
+
+const toggleSelectAll = () => {
+  const submittedIds = submittedUsers.map(u => u.id);
+  const allSelected = submittedIds.every(id => selectedIds.includes(id));
+  setSelectedIds(allSelected ? [] : submittedIds);
+};
+
+const handleBulkApprove = async () => {
+  if (selectedIds.length === 0) return;
+  if (!window.confirm(`Approve ${selectedIds.length} member${selectedIds.length > 1 ? 's' : ''}?`)) return;
+  setBulkApproveLoading(true);
+  try {
+    await Promise.all(selectedIds.map(id => client.patch(`/admin/users/${id}/approve`)));
+    setSelectedIds([]);
+    await fetchUsers();
+  } catch (err) {
+    alert('Some approvals failed — please retry');
+  } finally {
+    setBulkApproveLoading(false);
+  }
+};
+
+const handleExport = () => {
+  const exportData = filteredUsers.map(u => ({
+    Name:          u.name,
+    Email:         u.email,
+    Title:         u.title || '',
+    Role:          u.role,
+    Status:        STATUS_LABEL[u.profile_status],
+    'Joined Date': new Date(u.created_at).toLocaleDateString('en-IN'),
+  }));
+  const ws = XLSX.utils.json_to_sheet(exportData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Members');
+  XLSX.writeFile(wb, `ILC_Members_${new Date().toISOString().slice(0,10)}.xlsx`);
+};
   const filteredUsers = users.filter(u =>
     u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     u.email.toLowerCase().includes(searchQuery.toLowerCase())
@@ -89,26 +133,46 @@ const AllMembersTab = () => {
 
   return (
     <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
-      <div className="p-6 border-b border-gray-50 flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-          <input
-            type="text"
-            placeholder="Search by name or email..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-sm border border-gray-100 rounded-sm bg-[#FAFAFA] outline-none focus:ring-1 focus:ring-[#2a0b38]"
-          />
-        </div>
-        {searchQuery && (
-          <button onClick={() => setSearchQuery('')} className="text-gray-400 hover:text-gray-600">
-            <X className="w-4 h-4" />
-          </button>
-        )}
-        <span className="ml-auto text-[11px] text-gray-400 font-bold uppercase tracking-widest">
-          {filteredUsers.length} member{filteredUsers.length !== 1 ? 's' : ''}
-        </span>
-      </div>
+      <div className="p-6 border-b border-gray-50 flex flex-wrap items-center gap-4">
+  <div className="relative flex-1 min-w-[200px] max-w-sm">
+    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+    <input
+      type="text"
+      placeholder="Search by name or email..."
+      value={searchQuery}
+      onChange={e => setSearchQuery(e.target.value)}
+      className="w-full pl-10 pr-4 py-2 text-sm border border-gray-100 rounded-sm bg-[#FAFAFA] outline-none focus:ring-1 focus:ring-[#2a0b38]"
+    />
+  </div>
+  {searchQuery && (
+    <button onClick={() => setSearchQuery('')} className="text-gray-400 hover:text-gray-600">
+      <X className="w-4 h-4" />
+    </button>
+  )}
+  <div className="flex items-center gap-3 ml-auto">
+    {submittedUsers.length > 0 && (
+      <button
+        onClick={handleBulkApprove}
+        disabled={selectedIds.length === 0 || bulkApproveLoading}
+        className="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 text-[10px] font-bold px-4 py-2 rounded-sm uppercase tracking-widest transition-colors disabled:opacity-40"
+      >
+        <CheckCircle className="w-3 h-3" />
+        {bulkApproveLoading ? 'Approving...' : `Approve Selected (${selectedIds.length})`}
+      </button>
+    )}
+    <button
+      onClick={handleExport}
+      disabled={filteredUsers.length === 0}
+      className="flex items-center gap-2 bg-[#1a0525] hover:bg-[#2a0b38] text-white text-[10px] font-bold px-4 py-2 rounded-sm uppercase tracking-widest transition-colors disabled:opacity-40"
+    >
+      <Upload className="w-3 h-3" />
+      Export Excel
+    </button>
+    <span className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">
+      {filteredUsers.length} member{filteredUsers.length !== 1 ? 's' : ''}
+    </span>
+  </div>
+</div>
 
       {loading ? (
         <div className="p-16 text-center text-gray-400 text-sm">Loading members...</div>
@@ -117,8 +181,18 @@ const AllMembersTab = () => {
       ) : (
         <table className="w-full text-left">
           <thead className="bg-[#FAFAFA] text-[10px] uppercase tracking-widest text-gray-400 font-bold">
-            <tr>
-              <th className="px-8 py-4">Member</th>
+  <tr>
+    <th className="px-4 py-4">
+      {submittedUsers.length > 0 && (
+        <input
+          type="checkbox"
+          checked={submittedUsers.every(u => selectedIds.includes(u.id))}
+          onChange={toggleSelectAll}
+          className="w-4 h-4 accent-[#2a0b38] cursor-pointer"
+        />
+      )}
+    </th>
+    <th className="px-8 py-4">Member</th>
               <th className="px-8 py-4">Role</th>
               <th className="px-8 py-4">Status</th>
               <th className="px-8 py-4">Joined</th>
@@ -127,9 +201,19 @@ const AllMembersTab = () => {
           </thead>
           <tbody className="divide-y divide-gray-50">
             {filteredUsers.map(u => (
-              <tr key={u.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-8 py-5">
-                  <div className="flex items-center gap-3">
+              <tr key={u.id} className={`hover:bg-gray-50 transition-colors ${selectedIds.includes(u.id) ? 'bg-emerald-50/30' : ''}`}>
+  <td className="px-4 py-5">
+    {u.profile_status === 'SUBMITTED' && (
+      <input
+        type="checkbox"
+        checked={selectedIds.includes(u.id)}
+        onChange={() => toggleSelect(u.id)}
+        className="w-4 h-4 accent-[#2a0b38] cursor-pointer"
+      />
+    )}
+  </td>
+  <td className="px-8 py-5">
+    <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-[#1a0525] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
                       {u.initials}
                     </div>
