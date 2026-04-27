@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, Users, BookOpen, ChevronRight, MapPin, Clock } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import client from '../api/client';
+import { useEffect as useEffectExtra } from 'react';
 
 const formatDate = (dateStr) => {
   const d = new Date(dateStr);
@@ -19,7 +20,39 @@ const formatTime = (timeStr) => {
   d.setHours(parseInt(h), parseInt(m));
   return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 };
+const AnnouncementsBanner = () => {
+  const [announcements, setAnnouncements] = useState([]);
 
+  useEffect(() => {
+    client.get('/announcements').then(res => {
+      setAnnouncements(res.data.announcements.slice(0, 2));
+    }).catch(() => {});
+  }, []);
+
+  if (announcements.length === 0) return null;
+
+  return (
+    <div className="space-y-3">
+      {announcements.map(a => (
+        <div key={a.id} className={`flex items-start gap-4 p-4 rounded-xl border ${
+          a.type === 'Important'
+            ? 'bg-red-50 border-red-200'
+            : a.type === 'Event'
+            ? 'bg-purple-50 border-purple-200'
+            : 'bg-blue-50 border-blue-200'
+        }`}>
+          <span className="text-xl shrink-0">
+            {a.type === 'Important' ? '🔴' : a.type === 'Event' ? '📅' : '📢'}
+          </span>
+          <div>
+            <p className="text-xs font-bold text-[#2a0b38]">{a.title}</p>
+            <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{a.content}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
 const CeoDashboard = () => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
@@ -29,7 +62,18 @@ const CeoDashboard = () => {
   const [resources, setResources] = useState([]);
 const [loading, setLoading] = useState(true);
 const [spoc, setSpoc] = useState(null);
+const [showWelcome, setShowWelcome] = useState(false);
+useEffect(() => {
+  const key = `ilc_welcome_${user?.id}`;
+  if (!localStorage.getItem(key)) {
+    setShowWelcome(true);
+  }
+}, []);
 
+const dismissWelcome = () => {
+  localStorage.setItem(`ilc_welcome_${user?.id}`, 'seen');
+  setShowWelcome(false);
+};
   useEffect(() => {
     const fetchAll = async () => {
   try {
@@ -58,7 +102,40 @@ const [spoc, setSpoc] = useState(null);
 
   return (
     <div className="py-12 space-y-12 max-w-6xl">
-
+    {/* ── WELCOME BANNER */}
+    {showWelcome && (
+      <div className="relative bg-gradient-to-r from-[#1a0525] to-[#2a0b38] rounded-xl p-6 lg:p-8 overflow-hidden">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-[#EDA300] opacity-[0.05] rounded-full -mr-16 -mt-16" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#EDA300] opacity-[0.05] rounded-full -ml-10 -mb-10" />
+        <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <p className="text-[#EDA300] text-[10px] font-bold uppercase tracking-widest">
+              Welcome to ILC
+            </p>
+            <h2 className="text-2xl lg:text-3xl font-serif text-white">
+              Welcome to the Council, {firstName}! 🎉
+            </h2>
+            <p className="text-gray-400 text-sm leading-relaxed max-w-lg">
+              Your membership has been approved. You now have full access to exclusive events, resources, and India's most influential leadership network.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={() => { dismissWelcome(); navigate('/events'); }}
+              className="bg-[#EDA300] hover:bg-[#d4920a] text-[#1a0525] px-5 py-2.5 rounded-sm text-[11px] font-bold uppercase tracking-widest transition-all whitespace-nowrap"
+            >
+              View Events
+            </button>
+            <button
+              onClick={dismissWelcome}
+              className="text-gray-400 hover:text-white transition-colors p-1"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
       {/* ── HEADER */}
 <div className="flex flex-col lg:flex-row lg:items-center justify-between border-b border-gray-100 pb-8 gap-4">
   <div>
@@ -185,7 +262,8 @@ const [spoc, setSpoc] = useState(null);
         </div>
       </div>
 
-
+{/* ── ANNOUNCEMENTS */}
+      <AnnouncementsBanner />
       {/* ── UPCOMING EVENTS */}
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -268,25 +346,7 @@ const [spoc, setSpoc] = useState(null);
         )}
       </div>
 
-      {/* ── PREMIUM BANNER */}
-      <div className="bg-[#1a0525] rounded-xl p-8 lg:p-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#EDA300] opacity-[0.03] rounded-full -mr-32 -mt-32" />
-        <div className="relative z-10 space-y-3">
-          <p className="text-[#EDA300] text-[9px] font-bold uppercase tracking-widest">Exclusive Access</p>
-          <h2 className="text-3xl font-serif text-white max-w-md">
-            2026 Leadership Outlook
-          </h2>
-          <p className="text-gray-400 text-sm max-w-sm">
-            Curated insights and resources exclusively for ILC members.
-          </p>
-        </div>
-        <button
-          onClick={() => navigate('/resources')}
-          className="bg-[#EDA300] hover:bg-[#d4920a] text-[#1a0525] px-8 py-4 text-[10px] font-bold uppercase tracking-widest transition-all shrink-0 rounded-sm"
-        >
-          View Resources
-        </button>
-      </div>
+
     </div>
   );
 };

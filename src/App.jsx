@@ -16,11 +16,12 @@ import AdminEventsPage from './pages/AdminEventsPage';
 import CalendarPage from './pages/CalendarPage';
 import AdminOverview from './pages/AdminOverview';
 import AdminMembers from './pages/AdminMembers';
-import AddMemberPage from './pages/AddMemberPage';
-import BulkUploadPage from './pages/BulkUploadPage';
 import AdminSpocs from './pages/AdminSpocs';
 import AdminResourcesPage from './pages/AdminResourcesPage';
 import AuditLogsPage from './pages/AuditLogsPage';
+import AdminBroadcastPage from './pages/AdminBroadcastPage';
+import AdminAnnouncementsPage from './pages/AdminAnnouncementsPage';
+import AnnouncementsPage from './pages/AnnouncementsPage';
 
 function App() {
   const { user } = useAuthStore();
@@ -47,14 +48,15 @@ function App() {
           <Route path="/members"           element={<MembersPage />} />
           <Route path="/glimpses"          element={<ResourcesPage />} />
           <Route path="/resources"         element={<ResourcesPage />} />
+          <Route path="/announcements"     element={<ProtectedRoute><AnnouncementsPage /></ProtectedRoute>} />
           <Route path="/admin-dashboard"   element={<RoleRoute allowedRoles={['ADMIN']}><AdminOverview /></RoleRoute>} />
           <Route path="/admin/events"      element={<RoleRoute allowedRoles={['ADMIN']}><AdminEventsPage /></RoleRoute>} />
           <Route path="/admin/members"     element={<RoleRoute allowedRoles={['ADMIN']}><AdminMembers /></RoleRoute>} />
-          <Route path="/admin/add-member"  element={<RoleRoute allowedRoles={['ADMIN']}><AddMemberPage /></RoleRoute>} />
-          <Route path="/admin/bulk-upload" element={<RoleRoute allowedRoles={['ADMIN']}><BulkUploadPage /></RoleRoute>} />
           <Route path="/admin/spocs"       element={<RoleRoute allowedRoles={['ADMIN']}><AdminSpocs /></RoleRoute>} />
           <Route path="/admin/audit-logs"  element={<RoleRoute allowedRoles={['ADMIN']}><AuditLogsPage /></RoleRoute>} />
           <Route path="/admin/resources"   element={<RoleRoute allowedRoles={['ADMIN']}><AdminResourcesPage /></RoleRoute>} />
+          <Route path="/admin/broadcast"   element={<ProtectedRoute><AdminBroadcastPage /></ProtectedRoute>} />
+          <Route path="/admin/announcements" element={<ProtectedRoute><AdminAnnouncementsPage /></ProtectedRoute>} />
         </Route>
         <Route path="*" element={<Navigate to={getDefaultRoute()} replace />} />
       </Routes>

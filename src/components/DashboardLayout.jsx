@@ -1,9 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, BookOpen,
-  LogOut, Bell, UserPlus, Upload, ScrollText,
-  UserCircle, ChevronDown, Image, CheckCheck, Menu, X
+  LogOut, Bell, ScrollText,
+  UserCircle, ChevronDown, Image, CheckCheck,
+  Menu, X, Mail, Megaphone
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import client from '../api/client';
@@ -15,17 +16,18 @@ const CEO_MENU = [
   { icon: <Users size={18} />,           label: 'The Council', path: '/members' },
   { icon: <BookOpen size={18} />,        label: 'Knowledge',   path: '/resources' },
   { icon: <Image size={18} />,           label: 'Glimpses',    path: '/glimpses' },
+  { icon: <Megaphone size={18} />,       label: 'Announcements', path: '/announcements' },
 ];
 
 const ADMIN_MENU = [
   { icon: <LayoutDashboard size={18} />, label: 'Overview',     path: '/admin-dashboard' },
   { icon: <Calendar size={18} />,        label: 'Events',        path: '/admin/events' },
   { icon: <Users size={18} />,           label: 'Members',       path: '/admin/members' },
-  { icon: <UserPlus size={18} />,        label: 'Add Member',    path: '/admin/add-member' },
-  { icon: <Upload size={18} />,          label: 'Bulk Upload',   path: '/admin/bulk-upload' },
   { icon: <UserCircle size={18} />,      label: 'Manage SPOCs',  path: '/admin/spocs' },
   { icon: <BookOpen size={18} />,        label: 'Resources',     path: '/admin/resources' },
+  { icon: <Mail size={18} />,            label: 'Broadcast',     path: '/admin/broadcast' },
   { icon: <ScrollText size={18} />,      label: 'Audit Logs',    path: '/admin/audit-logs' },
+  { icon: <Megaphone size={18} />,       label: 'Announcements', path: '/admin/announcements' },
 ];
 
 const DashboardLayout = () => {
@@ -70,7 +72,6 @@ const DashboardLayout = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close sidebar on route change
   useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
 
   const handleLogout = () => { setDropdownOpen(false); logout(); };
@@ -162,7 +163,6 @@ const DashboardLayout = () => {
   return (
     <div className="flex h-screen w-full bg-[#FCFBFA] font-sans overflow-hidden">
 
-      {/* ── MOBILE OVERLAY */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -170,7 +170,6 @@ const DashboardLayout = () => {
         />
       )}
 
-      {/* ── SIDEBAR — desktop fixed, mobile slide-in */}
       <aside className={`
         fixed lg:relative z-50 lg:z-auto
         w-72 bg-[#1a0525] flex flex-col justify-between py-8 lg:py-12
@@ -182,14 +181,11 @@ const DashboardLayout = () => {
         <SidebarContent />
       </aside>
 
-      {/* ── MAIN */}
       <div className="flex-1 flex flex-col min-w-0 bg-[#FCFBFA] w-full">
 
-        {/* ── HEADER */}
         <header className="h-16 lg:h-24 px-4 lg:px-16 flex items-center justify-between sticky top-0 z-30 bg-[#FCFBFA] border-b border-gray-50 lg:border-none">
 
           <div className="flex items-center gap-3">
-            {/* Hamburger — mobile only */}
             <button
               onClick={() => setSidebarOpen(true)}
               className="lg:hidden p-2 text-gray-400 hover:text-[#2a0b38] transition-colors"
@@ -197,14 +193,12 @@ const DashboardLayout = () => {
               <Menu size={20} />
             </button>
 
-            {/* Logo — mobile only */}
             <img
               src="https://www.indialeadershipcouncil.com/wp-content/uploads/2026/04/ilc-faciliting.png"
               alt="ILC"
               className="h-8 object-contain lg:hidden"
             />
 
-            {/* Status — desktop only */}
             <div className="hidden lg:flex items-center gap-4">
               <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse" />
               <span className="text-[10px] font-bold tracking-[0.3em] text-gray-400 uppercase">
@@ -304,7 +298,6 @@ const DashboardLayout = () => {
           </div>
         </header>
 
-        {/* ── MAIN CONTENT */}
         <main className="flex-1 overflow-y-auto px-4 lg:px-16 pb-8 lg:pb-16 scroll-smooth">
           <Outlet />
         </main>
