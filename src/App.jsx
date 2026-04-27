@@ -12,7 +12,10 @@ import DashboardLayout from './components/DashboardLayout';
 import CeoDashboard from './pages/CeoDashboard';
 import CeoProfile from './pages/CeoProfile';
 import EventsPage from './pages/EventsPage';
+import EventDetailPage from './pages/EventDetailPage';
 import MembersPage from './pages/MembersPage';
+import AdminEventsPage from './pages/AdminEventsPage';
+import CalendarPage from './pages/CalendarPage';
 
 // Admin pages
 import AdminOverview from './pages/AdminOverview';
@@ -44,10 +47,11 @@ function App() {
 
           {/* ── Shared — profile works for both CEO and ADMIN */}
           <Route path="/profile" element={<CeoProfile />} />
-
+<Route path="/calendar" element={<CalendarPage />} />
           {/* ── CEO routes */}
           <Route path="/dashboard" element={<RoleRoute allowedRoles={['CEO']}><CeoDashboard /></RoleRoute>} />
-          <Route path="/events"    element={<EventsPage />} />
+          <Route path="/events"          element={<EventsPage />} />
+<Route path="/events/:id"      element={<EventDetailPage />} />
           <Route path="/members"   element={<MembersPage />} />
           <Route path="/resources" element={
             <div className="p-10 font-serif text-3xl text-[#2a0b38]">Resources — Coming Soon</div>
@@ -55,6 +59,7 @@ function App() {
 
           {/* ── ADMIN routes */}
           <Route path="/admin-dashboard"  element={<RoleRoute allowedRoles={['ADMIN']}><AdminOverview /></RoleRoute>} />
+          <Route path="/admin/events"     element={<RoleRoute allowedRoles={['ADMIN']}><AdminEventsPage /></RoleRoute>} />
           <Route path="/admin/members"    element={<RoleRoute allowedRoles={['ADMIN']}><AdminMembers /></RoleRoute>} />
           <Route path="/admin/add-member" element={<RoleRoute allowedRoles={['ADMIN']}><AddMemberPage /></RoleRoute>} />
           <Route path="/admin/bulk-upload"element={<RoleRoute allowedRoles={['ADMIN']}><BulkUploadPage /></RoleRoute>} />

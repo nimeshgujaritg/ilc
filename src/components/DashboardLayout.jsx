@@ -2,23 +2,26 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, BookOpen,
-  LogOut, Bell, UserPlus, Upload, ScrollText, UserCircle, ChevronDown
+  LogOut, Bell, UserPlus, Upload, ScrollText, UserCircle, ChevronDown, Image
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 const CEO_MENU = [
   { icon: <LayoutDashboard size={18} />, label: 'Overview',   path: '/dashboard' },
   { icon: <Calendar size={18} />,        label: 'Events',      path: '/events' },
+  { icon: <Calendar size={18} />,        label: 'Calendar',    path: '/calendar' },
   { icon: <Users size={18} />,           label: 'The Council', path: '/members' },
   { icon: <BookOpen size={18} />,        label: 'Knowledge',   path: '/resources' },
 ];
 
 const ADMIN_MENU = [
   { icon: <LayoutDashboard size={18} />, label: 'Overview',     path: '/admin-dashboard' },
+  { icon: <Calendar size={18} />,        label: 'Events',        path: '/admin/events' },
   { icon: <Users size={18} />,           label: 'Members',       path: '/admin/members' },
   { icon: <UserPlus size={18} />,        label: 'Add Member',    path: '/admin/add-member' },
   { icon: <Upload size={18} />,          label: 'Bulk Upload',   path: '/admin/bulk-upload' },
   { icon: <UserCircle size={18} />,      label: 'Manage SPOCs',  path: '/admin/spocs' },
+  { icon: <BookOpen size={18} />,        label: 'Resources',     path: '/admin/resources' },
   { icon: <ScrollText size={18} />,      label: 'Audit Logs',    path: '/admin/audit-logs' },
 ];
 
@@ -35,7 +38,6 @@ const DashboardLayout = () => {
   const displayTitle = user?.title || '';
   const displayInitials = user?.initials || '?';
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -97,17 +99,8 @@ const DashboardLayout = () => {
           </nav>
         </div>
 
-        <div className="px-10 space-y-8">
-          <div className="bg-white/5 border border-white/10 p-6 rounded-sm">
-            <p className="text-[9px] font-bold text-[#EDA300] tracking-widest uppercase mb-2">Priority</p>
-            <p className="text-white text-[11px] font-medium leading-relaxed mb-4">
-              Your dedicated concierge is standing by.
-            </p>
-            <button className="text-[9px] font-bold text-white uppercase tracking-widest border-b border-[#EDA300] pb-1 hover:text-[#EDA300] transition-colors">
-              Request Access
-            </button>
-          </div>
-
+        {/* Bottom — just logout, no priority box */}
+        <div className="px-10">
           <button
             onClick={handleLogout}
             className="flex items-center gap-4 text-gray-500 hover:text-red-400 transition-colors"
@@ -129,10 +122,8 @@ const DashboardLayout = () => {
           </div>
 
           <div className="flex items-center gap-8">
-            {/* Bell — placeholder for now */}
             <Bell size={18} className="text-gray-300 cursor-pointer hover:text-[#2a0b38] transition-colors" />
 
-            {/* Profile dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setDropdownOpen(p => !p)}
@@ -156,7 +147,6 @@ const DashboardLayout = () => {
                 <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
-              {/* Dropdown menu */}
               {dropdownOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-100 rounded-sm shadow-lg z-50 overflow-hidden">
                   <button

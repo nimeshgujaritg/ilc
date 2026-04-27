@@ -1,107 +1,325 @@
-import React, { useState } from 'react';
-import { MapPin, Calendar } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Calendar, MapPin, Users, ChevronRight, Clock, ChevronLeft, LayoutList } from 'lucide-react';
+import client from '../api/client';
 
-const EVENTS = [
-  {
-    id: 1,
-    date: 'November 12, 2026',
-    title: 'AI & Sovereign Finance',
-    location: 'Mumbai',
-    desc: 'An intimate roundtable on the intersection of artificial intelligence and sovereign wealth management, hosted at the Taj Mahal Palace. Limited to 40 principals.',
-    img: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&q=80&w=800',
-  },
-  {
-    id: 2,
-    date: 'December 04, 2026',
-    title: 'Global M&A Masterclass',
-    location: 'New Delhi',
-    desc: 'A full-day deep dive into cross-border mergers, acquisition strategy, and deal structuring across emerging markets, led by senior practitioners.',
-    img: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800',
-  },
-  {
-    id: 3,
-    date: 'January 18, 2027',
-    title: 'Private Art & Vineyard Gala',
-    location: 'Nashik',
-    desc: "An exclusive evening connecting India's foremost art collectors and vineyard owners in a curated, private setting. Strictly invitation only.",
-    img: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&q=80&w=800',
-  },
-  {
-    id: 4,
-    date: 'February 22, 2027',
-    title: 'Infrastructure & Capital Summit',
-    location: 'Bengaluru',
-    desc: 'Visionary leaders convene to shape the next decade of infrastructure investment across South and Southeast Asia.',
-    img: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?auto=format&fit=crop&q=80&w=800',
-  },
-];
+const formatTime = (timeStr) => {
+  if (!timeStr) return null;
+  const [h, m] = timeStr.split(':');
+  const d = new Date();
+  d.setHours(parseInt(h), parseInt(m));
+  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+};
 
-const EventsPage = () => {
-  // Track registration per event ID
-  const [registered, setRegistered] = useState({});
+const getDateKey = (dateStr) => {
+  const d = new Date(dateStr);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+};
 
-  const toggleRegister = (id) => {
-    setRegistered((prev) => ({ ...prev, [id]: !prev[id] }));
+// ─────────────────────────────────────────────
+// CALENDAR VIEW
+// ─────────────────────────────────────────────
+const CalendarView = ({ events, navigate }) => {
+  const today = new Date();
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  // Map events by date key
+  const eventMap = {};
+  events.forEach(event => {
+    const key = getDateKey(event.date);
+    if (!eventMap[key]) eventMap[key] = [];
+    eventMap[key].push(event);
+  });
+
+  // Build calendar grid
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
+    else setViewMonth(m => m - 1);
+  };
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
+    else setViewMonth(m => m + 1);
   };
 
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
   return (
-    <div className="max-w-6xl space-y-10">
+    <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
 
-      <section>
-        <p className="text-[#EDA300] text-[10px] font-bold uppercase tracking-widest mb-2">Curated Experiences</p>
-        <h1 className="text-6xl font-serif text-[#2a0b38]">Events & Summits</h1>
-        <p className="text-gray-400 font-light mt-3 text-base">Private, invitation-only engagements for council members.</p>
-      </section>
+      {/* Month navigation */}
+      <div className="flex items-center justify-between px-8 py-6 border-b border-gray-50">
+        <button
+          onClick={prevMonth}
+          className="p-2 text-gray-400 hover:text-[#2a0b38] transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <h2 className="text-xl font-serif text-[#2a0b38]">
+          {monthNames[viewMonth]} {viewYear}
+        </h2>
+        <button
+          onClick={nextMonth}
+          className="p-2 text-gray-400 hover:text-[#2a0b38] transition-colors"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-        {EVENTS.map((event) => (
-          <div
-            key={event.id}
-            className="group bg-white border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-500 rounded-sm"
-          >
-            {/* Image */}
-            <div className="h-64 overflow-hidden relative">
-              <img
-                src={event.img}
-                alt={event.title}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 brightness-90"
-              />
-              {/* Registered badge overlay */}
-              {registered[event.id] && (
-                <div className="absolute top-4 right-4 bg-[#2a0b38] text-white text-[9px] font-bold uppercase tracking-widest px-3 py-1.5">
-                  ✓ Registered
-                </div>
-              )}
-            </div>
-
-            {/* Body */}
-            <div className="p-8 space-y-4">
-              <div className="flex items-center gap-4 text-[9px] font-bold uppercase tracking-widest text-gray-400">
-                <span className="flex items-center gap-1.5">
-                  <Calendar size={10} className="text-[#EDA300]" /> {event.date}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <MapPin size={10} className="text-[#EDA300]" /> {event.location}
-                </span>
-              </div>
-
-              <h3 className="text-2xl font-serif text-[#2a0b38] leading-snug">{event.title}</h3>
-              <p className="text-sm text-gray-400 font-light leading-relaxed">{event.desc}</p>
-
-              <button
-                onClick={() => toggleRegister(event.id)}
-                className={`w-full py-4 text-[10px] font-bold uppercase tracking-widest transition-all duration-300 rounded-sm ${
-                  registered[event.id]
-                    ? 'bg-[#2a0b38] text-white border border-[#2a0b38]'
-                    : 'bg-white text-[#2a0b38] border border-[#2a0b38] hover:bg-[#2a0b38] hover:text-white'
-                }`}
-              >
-                {registered[event.id] ? '✓ Interest Registered — Click to Withdraw' : 'Register Interest'}
-              </button>
-            </div>
+      {/* Day headers */}
+      <div className="grid grid-cols-7 border-b border-gray-50">
+        {dayNames.map(day => (
+          <div key={day} className="py-3 text-center">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{day}</span>
           </div>
         ))}
       </div>
+
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7">
+        {Array.from({ length: totalCells }).map((_, idx) => {
+          const dayNum = idx - firstDay + 1;
+          const isCurrentMonth = dayNum >= 1 && dayNum <= daysInMonth;
+          const dateKey = isCurrentMonth
+            ? `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`
+            : null;
+          const dayEvents = dateKey ? (eventMap[dateKey] || []) : [];
+          const isToday = dateKey === todayKey;
+
+          return (
+            <div
+              key={idx}
+              className={`min-h-[100px] p-2 border-b border-r border-gray-50 ${
+                !isCurrentMonth ? 'bg-gray-50/30' : ''
+              }`}
+            >
+              {isCurrentMonth && (
+                <>
+                  <div className={`w-7 h-7 flex items-center justify-center rounded-full mb-1 ${
+                    isToday ? 'bg-[#2a0b38] text-white' : 'text-gray-500'
+                  }`}>
+                    <span className="text-xs font-bold">{dayNum}</span>
+                  </div>
+                  <div className="space-y-1">
+                    {dayEvents.map(event => (
+                      <button
+                        key={event.id}
+                        onClick={() => navigate(`/events/${event.id}`)}
+                        className={`w-full text-left px-2 py-1 rounded text-[10px] font-bold truncate transition-all hover:opacity-80 ${
+                          event.is_booked === 1
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : event.is_waitlisted === 1
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-[#2a0b38]/10 text-[#2a0b38]'
+                        }`}
+                      >
+                        {event.title}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-6 px-8 py-4 border-t border-gray-50">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded bg-[#2a0b38]/10" />
+          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Event</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded bg-emerald-100" />
+          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Booked</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded bg-amber-100" />
+          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Waitlisted</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// LIST VIEW
+// ─────────────────────────────────────────────
+const ListView = ({ events, navigate }) => {
+  if (events.length === 0) return (
+    <div className="bg-white border border-gray-100 rounded-xl p-16 text-center shadow-sm">
+      <Calendar className="w-10 h-10 text-gray-200 mx-auto mb-4" />
+      <p className="text-gray-400 text-sm">No upcoming events at the moment.</p>
+      <p className="text-gray-300 text-xs mt-1">Check back soon.</p>
+    </div>
+  );
+
+  return (
+    <div className="grid gap-4">
+      {events.map(event => {
+        const spotsLeft = event.capacity ? event.capacity - event.booking_count : null;
+        const isFull = spotsLeft !== null && spotsLeft <= 0;
+
+        return (
+          <button
+            key={event.id}
+            onClick={() => navigate(`/events/${event.id}`)}
+            className="w-full bg-white border border-gray-100 rounded-xl p-8 shadow-sm hover:shadow-md hover:border-[#2a0b38]/20 transition-all text-left group"
+          >
+            <div className="flex items-start justify-between gap-6">
+              <div className="flex gap-6 items-start">
+                <div className="bg-[#1a0525] text-white rounded-lg px-4 py-3 text-center shrink-0 w-16">
+                  <p className="text-[#EDA300] text-[9px] font-bold uppercase tracking-widest">
+                    {new Date(event.date).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short' })}
+                  </p>
+                  <p className="text-2xl font-serif font-bold leading-none mt-1">
+                    {new Date(event.date).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric' })}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-lg font-serif text-[#2a0b38] group-hover:text-[#1a0525]">
+                      {event.title}
+                    </h3>
+                    {event.is_booked === 1 && (
+                      <span className="text-[9px] font-bold uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-1 rounded-full">
+                        Booked
+                      </span>
+                    )}
+                    {event.is_waitlisted === 1 && (
+                      <span className="text-[9px] font-bold uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-200 px-2 py-1 rounded-full">
+                        Waitlisted
+                      </span>
+                    )}
+                    {isFull && event.is_booked !== 1 && event.is_waitlisted !== 1 && (
+                      <span className="text-[9px] font-bold uppercase tracking-widest bg-red-50 text-red-400 border border-red-200 px-2 py-1 rounded-full">
+                        Full
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-5 flex-wrap">
+                    {event.time && (
+                      <span className="flex items-center gap-1.5 text-gray-400 text-xs">
+                        <Clock className="w-3 h-3" />
+                        {formatTime(event.time)}
+                      </span>
+                    )}
+                    {event.location && (
+                      <span className="flex items-center gap-1.5 text-gray-400 text-xs">
+                        <MapPin className="w-3 h-3" />
+                        {event.location}
+                      </span>
+                    )}
+                    {event.capacity && (
+                      <span className="flex items-center gap-1.5 text-gray-400 text-xs">
+                        <Users className="w-3 h-3" />
+                        {isFull ? 'Fully booked' : `${spotsLeft} spots left`}
+                      </span>
+                    )}
+                  </div>
+                  {event.description && (
+                    <p className="text-gray-400 text-sm leading-relaxed line-clamp-2">
+                      {event.description}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-200 group-hover:text-[#EDA300] transition-colors shrink-0 mt-1" />
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// MAIN COMPONENT
+// ─────────────────────────────────────────────
+const EventsPage = () => {
+  const navigate = useNavigate();
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [view, setView] = useState('list');
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await client.get('/events');
+        setEvents(res.data.events);
+      } catch (err) {
+        setError('Failed to load events. Please refresh.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
+  }, []);
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <p className="text-gray-400 text-sm">Loading events...</p>
+    </div>
+  );
+
+  if (error) return (
+    <div className="flex items-center justify-center h-64">
+      <p className="text-red-400 text-sm">{error}</p>
+    </div>
+  );
+
+  return (
+    <div className="py-12 space-y-10">
+
+      {/* Header + view toggle */}
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-[#EDA300] text-[10px] font-bold uppercase tracking-widest mb-2">Calendar</p>
+          <h1 className="text-4xl font-serif text-[#2a0b38]">Upcoming Events</h1>
+          <p className="text-gray-400 text-sm mt-2">Exclusive events curated for ILC members.</p>
+        </div>
+
+        {/* Toggle buttons */}
+        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg mt-2">
+          <button
+            onClick={() => setView('list')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all ${
+              view === 'list'
+                ? 'bg-white text-[#2a0b38] shadow-sm'
+                : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            <LayoutList className="w-4 h-4" />
+            List
+          </button>
+          <button
+            onClick={() => setView('calendar')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all ${
+              view === 'calendar'
+                ? 'bg-white text-[#2a0b38] shadow-sm'
+                : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            <Calendar className="w-4 h-4" />
+            Calendar
+          </button>
+        </div>
+      </div>
+
+      {/* View */}
+      {view === 'list'
+        ? <ListView events={events} navigate={navigate} />
+        : <CalendarView events={events} navigate={navigate} />
+      }
     </div>
   );
 };
