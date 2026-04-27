@@ -85,7 +85,12 @@ export const useAuthStore = create((set) => ({
       return { success: false, error: message };
     }
   },
-
+updateUser: (updatedFields) => {
+  const currentUser = JSON.parse(localStorage.getItem('ilc_user')) || {};
+  const newUser = { ...currentUser, ...updatedFields };
+  localStorage.setItem('ilc_user', JSON.stringify(newUser));
+  set({ user: newUser });
+},
   clearError: () => set({ error: null }),
   clearSessionExpired: () => set({ sessionExpired: false }),
 }));

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { UserCircle, Plus, X, ChevronDown, Upload } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import client from '../api/client';
-
+import ImageUpload from '../components/ImageUpload';
 const AdminSpocs = () => {
   const [spocs, setSpocs] = useState([]);
   const [users, setUsers] = useState([]);
@@ -305,19 +305,26 @@ const AdminSpocs = () => {
               { key: 'phone',     label: 'Phone',      placeholder: '+91 98765 43210' },
               { key: 'photo_url', label: 'Photo URL',  placeholder: 'https://example.com/photo.jpg' },
             ].map(field => (
-              <div key={field.key} className="space-y-1.5">
-                <label className="text-[10px] font-bold tracking-[0.2em] text-gray-400 uppercase">
-                  {field.label} {field.required && <span className="text-red-400">*</span>}
-                </label>
-                <input
-                  type="text"
-                  value={form[field.key]}
-                  onChange={e => setForm(p => ({ ...p, [field.key]: e.target.value }))}
-                  placeholder={field.placeholder}
-                  className="block w-full px-4 py-3 border border-gray-100 rounded-sm bg-[#FAFAFA] text-sm text-gray-800 outline-none focus:ring-1 focus:ring-[#2a0b38]"
-                />
-              </div>
-            ))}
+  <div key={field.key} className="space-y-1.5">
+    <label className="text-[10px] font-bold tracking-[0.2em] text-gray-400 uppercase">
+      {field.label} {field.required && <span className="text-red-400">*</span>}
+    </label>
+    <input
+      type="text"
+      value={form[field.key]}
+      onChange={e => setForm(p => ({ ...p, [field.key]: e.target.value }))}
+      placeholder={field.placeholder}
+      className="block w-full px-4 py-3 border border-gray-100 rounded-sm bg-[#FAFAFA] text-sm text-gray-800 outline-none focus:ring-1 focus:ring-[#2a0b38]"
+    />
+  </div>
+))}
+
+{/* Photo upload */}
+<ImageUpload
+  value={form.photo_url}
+  onChange={url => setForm(p => ({ ...p, photo_url: url }))}
+  label="Photo"
+/>
             <button
               type="submit" disabled={formLoading}
               className="w-full bg-[#2a0b38] hover:bg-[#1a0525] disabled:opacity-50 text-white py-3 rounded-sm text-[11px] font-bold uppercase tracking-widest transition-all"

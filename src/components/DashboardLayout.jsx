@@ -2,9 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, BookOpen,
-  LogOut, Bell, UserPlus, Upload, ScrollText, UserCircle, ChevronDown, Image
+  LogOut, Bell, UserPlus, Upload, ScrollText,
+  UserCircle, ChevronDown, Image, CheckCheck
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import client from '../api/client';
 
 const CEO_MENU = [
   { icon: <LayoutDashboard size={18} />, label: 'Overview',   path: '/dashboard' },
@@ -12,6 +14,7 @@ const CEO_MENU = [
   { icon: <Calendar size={18} />,        label: 'Calendar',    path: '/calendar' },
   { icon: <Users size={18} />,           label: 'The Council', path: '/members' },
   { icon: <BookOpen size={18} />,        label: 'Knowledge',   path: '/resources' },
+  { icon: <Image size={18} />,           label: 'Glimpses',    path: '/glimpses' },
 ];
 
 const ADMIN_MENU = [
@@ -31,31 +34,71 @@ const DashboardLayout = () => {
   const location = useLocation();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unread, setUnread] = useState(0);
+
   const dropdownRef = useRef(null);
+  const notifRef = useRef(null);
 
   const menuItems = user?.role === 'ADMIN' ? ADMIN_MENU : CEO_MENU;
   const displayName = user?.name || 'Member';
   const displayTitle = user?.title || '';
   const displayInitials = user?.initials || '?';
 
+  // Fetch notifications
+  const fetchNotifications = async () => {
+    try {
+      const res = await client.get('/admin/notifications');
+      setNotifications(res.data.notifications);
+      setUnread(res.data.unread);
+    } catch (err) {}
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setDropdownOpen(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setNotifOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    setDropdownOpen(false);
-    logout();
+  const handleLogout = () => { setDropdownOpen(false); logout(); };
+  const handleProfile = () => { setDropdownOpen(false); navigate('/profile'); };
+
+  const handleMarkRead = async (id) => {
+    try {
+      await client.patch(`/admin/notifications/${id}/read`);
+      setNotifications(p => p.map(n => n.id === id ? { ...n, is_read: true } : n));
+      setUnread(p => Math.max(0, p - 1));
+    } catch (err) {}
   };
 
-  const handleProfile = () => {
-    setDropdownOpen(false);
-    navigate('/profile');
+  const handleMarkAllRead = async () => {
+    try {
+      await client.patch('/admin/notifications/read-all');
+      setNotifications(p => p.map(n => ({ ...n, is_read: true })));
+      setUnread(0);
+    } catch (err) {}
+  };
+
+  const TYPE_COLORS = {
+    approval: 'bg-emerald-500',
+    event:    'bg-[#EDA300]',
+    spoc:     'bg-blue-500',
+    general:  'bg-gray-400',
   };
 
   return (
@@ -99,7 +142,6 @@ const DashboardLayout = () => {
           </nav>
         </div>
 
-        {/* Bottom — just logout, no priority box */}
         <div className="px-10">
           <button
             onClick={handleLogout}
@@ -122,8 +164,82 @@ const DashboardLayout = () => {
           </div>
 
           <div className="flex items-center gap-8">
-            <Bell size={18} className="text-gray-300 cursor-pointer hover:text-[#2a0b38] transition-colors" />
 
+            {/* ── NOTIFICATIONS BELL */}
+            <div className="relative" ref={notifRef}>
+              <button
+                onClick={() => setNotifOpen(p => !p)}
+                className="relative p-1"
+              >
+                <Bell size={18} className="text-gray-400 hover:text-[#2a0b38] transition-colors" />
+                {unread > 0 && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-[9px] font-bold">{unread > 9 ? '9+' : unread}</span>
+                  </div>
+                )}
+              </button>
+
+              {/* Notification dropdown */}
+              {notifOpen && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-100 rounded-xl shadow-xl z-50 overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-[#2a0b38]">
+                      Notifications
+                    </p>
+                    {unread > 0 && (
+                      <button
+                        onClick={handleMarkAllRead}
+                        className="flex items-center gap-1 text-[10px] text-gray-400 hover:text-[#2a0b38] font-bold uppercase tracking-widest transition-colors"
+                      >
+                        <CheckCheck className="w-3 h-3" />
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
+                    {notifications.length === 0 ? (
+                      <div className="px-4 py-8 text-center">
+                        <Bell className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                        <p className="text-gray-400 text-xs">No notifications yet</p>
+                      </div>
+                    ) : (
+                      notifications.map(n => (
+                        <button
+                          key={n.id}
+                          onClick={() => handleMarkRead(n.id)}
+                          className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-start gap-3 ${
+                            !n.is_read ? 'bg-blue-50/50' : ''
+                          }`}
+                        >
+                          <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
+                            TYPE_COLORS[n.type] || 'bg-gray-400'
+                          }`} />
+                          <div className="min-w-0 flex-1">
+                            <p className={`text-xs font-bold text-[#2a0b38] ${!n.is_read ? '' : 'opacity-60'}`}>
+                              {n.title}
+                            </p>
+                            <p className="text-[11px] text-gray-400 mt-0.5 leading-relaxed">
+                              {n.message}
+                            </p>
+                            <p className="text-[10px] text-gray-300 mt-1">
+                              {new Date(n.created_at).toLocaleDateString('en-IN', {
+                                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                              })}
+                            </p>
+                          </div>
+                          {!n.is_read && (
+                            <div className="w-2 h-2 bg-blue-500 rounded-full shrink-0 mt-1.5" />
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Profile dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setDropdownOpen(p => !p)}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Calendar, Plus, Pencil, Trash2, X, ChevronRight } from 'lucide-react';
 import client from '../api/client';
+import ImageUpload from '../components/ImageUpload';
 
 const formatDate = (dateStr) => {
   const d = new Date(dateStr);
@@ -12,7 +13,7 @@ const formatDate = (dateStr) => {
 
 const EMPTY_FORM = {
   title: '', date: '', time: '', location: '',
-  description: '', capacity: '', calendly_link: ''
+  description: '', capacity: '', calendly_link: '', image_url: ''
 };
 
 const AdminEventsPage = () => {
@@ -55,7 +56,8 @@ const AdminEventsPage = () => {
       location:      event.location || '',
       description:   event.description || '',
       capacity:      event.capacity || '',
-      calendly_link: event.calendly_link || ''
+      calendly_link: event.calendly_link || '',
+      image_url:     event.image_url || ''
     });
     setFormError('');
     setShowModal(true);
@@ -86,6 +88,7 @@ const AdminEventsPage = () => {
         description:   form.description.trim() || null,
         capacity:      form.capacity ? parseInt(form.capacity) : null,
         calendly_link: form.calendly_link.trim() || null,
+        image_url:     form.image_url || null,
       };
       if (editingEvent) {
         await client.put(`/events/${editingEvent.id}`, payload);
@@ -150,72 +153,68 @@ const AdminEventsPage = () => {
         <div className="bg-white border border-gray-100 rounded-xl p-16 text-center shadow-sm">
           <Calendar className="w-10 h-10 text-gray-200 mx-auto mb-4" />
           <p className="text-gray-400 text-sm">No events yet.</p>
-          <button
-            onClick={openCreate}
-            className="mt-4 text-[11px] font-bold uppercase tracking-widest text-[#2a0b38] underline"
-          >
+          <button onClick={openCreate} className="mt-4 text-[11px] font-bold uppercase tracking-widest text-[#2a0b38] underline">
             Create your first event
           </button>
         </div>
       )}
 
+      {/* Events grid — card format */}
       {!loading && events.length > 0 && (
-        <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-50">
-                <th className="text-left px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">Event</th>
-                <th className="text-left px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">Date</th>
-                <th className="text-left px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">Location</th>
-                <th className="text-left px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">Bookings</th>
-                <th className="px-6 py-4" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {events.map(event => (
-                <tr key={event.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-8 py-5">
-                    <p className="text-sm font-bold text-[#2a0b38]">{event.title}</p>
-                    {event.calendly_link && (
-                      <p className="text-[10px] text-gray-400 mt-0.5">Has Calendly link</p>
-                    )}
-                  </td>
-                  <td className="px-6 py-5 text-sm text-gray-600">
-                    {formatDate(event.date)}
-                  </td>
-                  <td className="px-6 py-5 text-sm text-gray-600">
-                    {event.location || <span className="text-gray-300">—</span>}
-                  </td>
-                  <td className="px-6 py-5">
-                    <span className="text-sm text-gray-600">
-                      {event.booking_count}
-                      {event.capacity ? ` / ${event.capacity}` : ''}
-                    </span>
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-3 justify-end">
-                      <button
-                        onClick={() => openEdit(event)}
-                        className="p-2 text-gray-400 hover:text-[#2a0b38] transition-colors"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(event.id)}
-                        disabled={deletingId === event.id}
-                        className="p-2 text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid grid-cols-2 gap-6">
+          {events.map(event => (
+            <div key={event.id} className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all">
+              {/* Event image */}
+              {event.image_url ? (
+                <img
+                  src={event.image_url}
+                  alt={event.title}
+                  className="w-full h-48 object-cover"
+                />
+              ) : (
+                <div className="w-full h-48 bg-[#1a0525] flex items-center justify-center">
+                  <Calendar className="w-12 h-12 text-[#EDA300]/30" />
+                </div>
+              )}
+
+              <div className="p-6">
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <div>
+                    <p className="text-[#EDA300] text-[9px] font-bold uppercase tracking-widest mb-1">
+                      {formatDate(event.date)}
+                    </p>
+                    <h3 className="text-lg font-serif text-[#2a0b38] leading-tight">
+                      {event.title}
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => openEdit(event)}
+                      className="p-2 text-gray-400 hover:text-[#2a0b38] transition-colors"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(event.id)}
+                      disabled={deletingId === event.id}
+                      className="p-2 text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 text-xs text-gray-400">
+                  {event.location && <span>📍 {event.location}</span>}
+                  <span>👥 {event.booking_count}{event.capacity ? ` / ${event.capacity}` : ''} bookings</span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
+      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -224,7 +223,7 @@ const AdminEventsPage = () => {
               <h2 className="text-xl font-serif text-[#2a0b38]">
                 {editingEvent ? 'Edit Event' : 'New Event'}
               </h2>
-              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 transition-colors">
+              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -235,6 +234,13 @@ const AdminEventsPage = () => {
                   <p className="text-xs text-red-600">{formError}</p>
                 </div>
               )}
+
+              {/* Image upload */}
+              <ImageUpload
+                value={form.image_url}
+                onChange={url => setForm(p => ({ ...p, image_url: url }))}
+                label="Event Photo"
+              />
 
               <div className="space-y-2">
                 <label className="text-[11px] font-bold tracking-widest text-gray-500 uppercase">
@@ -254,80 +260,38 @@ const AdminEventsPage = () => {
                   <label className="text-[11px] font-bold tracking-widest text-gray-500 uppercase">
                     Date <span className="text-red-400">*</span>
                   </label>
-                  <input
-                    type="date"
-                    name="date"
-                    value={form.date}
-                    onChange={handleChange}
-                    className={inputBase}
-                  />
+                  <input type="date" name="date" value={form.date} onChange={handleChange} className={inputBase} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold tracking-widest text-gray-500 uppercase">Time</label>
-                  <input
-                    type="time"
-                    name="time"
-                    value={form.time}
-                    onChange={handleChange}
-                    className={inputBase}
-                  />
+                  <input type="time" name="time" value={form.time} onChange={handleChange} className={inputBase} />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <label className="text-[11px] font-bold tracking-widest text-gray-500 uppercase">Location</label>
-                <input
-                  name="location"
-                  value={form.location}
-                  onChange={handleChange}
-                  placeholder="e.g. The Taj Mahal Palace, Mumbai"
-                  className={inputBase}
-                />
+                <input name="location" value={form.location} onChange={handleChange} placeholder="e.g. The Taj Mahal Palace, Mumbai" className={inputBase} />
               </div>
 
               <div className="space-y-2">
                 <label className="text-[11px] font-bold tracking-widest text-gray-500 uppercase">Description</label>
-                <textarea
-                  name="description"
-                  value={form.description}
-                  onChange={handleChange}
-                  rows={4}
-                  placeholder="Describe the event..."
-                  className={`${inputBase} resize-none`}
-                />
+                <textarea name="description" value={form.description} onChange={handleChange} rows={4} placeholder="Describe the event..." className={`${inputBase} resize-none`} />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold tracking-widest text-gray-500 uppercase">Capacity</label>
-                  <input
-                    type="number"
-                    name="capacity"
-                    value={form.capacity}
-                    onChange={handleChange}
-                    placeholder="e.g. 50"
-                    min="1"
-                    className={inputBase}
-                  />
+                  <input type="number" name="capacity" value={form.capacity} onChange={handleChange} placeholder="e.g. 50" min="1" className={inputBase} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold tracking-widest text-gray-500 uppercase">Calendly Link</label>
-                  <input
-                    name="calendly_link"
-                    value={form.calendly_link}
-                    onChange={handleChange}
-                    placeholder="https://calendly.com/..."
-                    className={inputBase}
-                  />
+                  <input name="calendly_link" value={form.calendly_link} onChange={handleChange} placeholder="https://calendly.com/..." className={inputBase} />
                 </div>
               </div>
             </div>
 
             <div className="px-8 py-6 border-t border-gray-100 flex items-center justify-end gap-3">
-              <button
-                onClick={closeModal}
-                className="px-6 py-3 text-[11px] font-bold uppercase tracking-widest text-gray-400 hover:text-gray-600 transition-colors"
-              >
+              <button onClick={closeModal} className="px-6 py-3 text-[11px] font-bold uppercase tracking-widest text-gray-400 hover:text-gray-600">
                 Cancel
               </button>
               <button

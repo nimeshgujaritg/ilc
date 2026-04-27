@@ -1,101 +1,228 @@
-import React from 'react';
-import { ArrowUpRight, MapPin, Calendar, Users, ChevronRight } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Calendar, Users, BookOpen, ChevronRight, MapPin, Clock } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
+import client from '../api/client';
+
+const formatDate = (dateStr) => {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    day: 'numeric', month: 'short', year: 'numeric'
+  });
+};
+
+const formatTime = (timeStr) => {
+  if (!timeStr) return null;
+  const [h, m] = timeStr.split(':');
+  const d = new Date();
+  d.setHours(parseInt(h), parseInt(m));
+  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+};
 
 const CeoDashboard = () => {
-  return (
-    <div className="max-w-6xl mx-auto py-10 px-4 space-y-12">
-      
-      {/* HEADER: Professional & Tight */}
-      <section className="flex justify-between items-end border-b border-gray-100 pb-8">
-        <div className="space-y-2">
-          <p className="text-[10px] font-bold tracking-[0.3em] text-[#EDA300] uppercase">Executive Terminal v2.4</p>
-          <h1 className="text-4xl font-serif text-[#360e4a] tracking-tight">Welcome, Amitav.</h1>
-          <p className="text-sm text-gray-400 font-light italic">Your weekly synthesis is ready for review.</p>
-        </div>
-        <div className="flex gap-4">
-           <button className="px-6 py-2.5 bg-white border border-gray-100 text-[10px] font-bold uppercase tracking-widest text-[#360e4a] hover:bg-gray-50 transition-all">Concierge</button>
-           <button className="px-6 py-2.5 bg-[#360e4a] text-white text-[10px] font-bold uppercase tracking-widest hover:bg-[#2a0b38] transition-all shadow-lg shadow-purple-900/20">All Invites</button>
-        </div>
-      </section>
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
 
-      {/* STATS: Minimalist Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Network" value="230+" sub="Visionaries" />
-        <StatCard label="Events" value="12" sub="Global Summits" highlight />
-        <StatCard label="Bookings" value="04" sub="Confirmed" />
-        <StatCard label="Briefings" value="48" sub="Internal" />
+  const [events, setEvents] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [resources, setResources] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const [evRes, memRes, resRes] = await Promise.all([
+          client.get('/events'),
+          client.get('/admin/members-list'),
+          client.get('/resources'),
+        ]);
+        setEvents(evRes.data.events);
+        setMembers(memRes.data.members);
+        setResources(resRes.data.resources);
+      } catch (err) {
+        console.error('Dashboard fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAll();
+  }, []);
+
+  const bookedEvents = events.filter(e => e.is_booked === 1);
+  const upcomingEvents = events.slice(0, 3);
+  const firstName = user?.name?.split(' ')[0] || 'Executive';
+
+  return (
+    <div className="py-12 space-y-12 max-w-6xl">
+
+      {/* ── HEADER */}
+      <div className="flex items-end justify-between border-b border-gray-100 pb-8">
+        <div>
+          <p className="text-[#EDA300] text-[10px] font-bold uppercase tracking-widest mb-2">
+            Executive Dashboard
+          </p>
+          <h1 className="text-4xl font-serif text-[#2a0b38]">
+            Welcome back, {firstName}.
+          </h1>
+          <p className="text-gray-400 text-sm mt-2">
+            Here's what's happening in the India Leadership Council.
+          </p>
+        </div>
+        <button
+          onClick={() => navigate('/events')}
+          className="flex items-center gap-2 bg-[#1a0525] hover:bg-[#2a0b38] text-white px-6 py-3 rounded-sm text-[11px] font-bold uppercase tracking-widest transition-all"
+        >
+          View Events
+          <ChevronRight className="w-4 h-4 text-[#EDA300]" />
+        </button>
       </div>
 
-      {/* UPCOMING ENGAGEMENTS: Clean Grid */}
-      <section className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h3 className="text-[11px] font-bold tracking-[0.4em] uppercase text-gray-400">Upcoming Engagements</h3>
-          <button className="text-[10px] font-bold text-[#EDA300] uppercase tracking-widest border-b border-[#EDA300]/30 pb-1">View Calendar</button>
+      {/* ── STATS */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm hover:border-[#EDA300]/30 transition-colors">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 bg-[#1a0525] rounded-lg flex items-center justify-center">
+              <Users className="w-4 h-4 text-[#EDA300]" />
+            </div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Members</p>
+          </div>
+          <p className="text-3xl font-serif text-[#2a0b38]">
+            {loading ? '—' : members.length}
+          </p>
+          <p className="text-[10px] text-gray-300 mt-1 uppercase tracking-wider">Council Members</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <EventCard 
-            date="Nov 12" 
-            title="AI & Sovereign Finance" 
-            location="Mumbai" 
-            img="https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&q=80&w=500"
-          />
-          <EventCard 
-            date="Dec 04" 
-            title="Global M&A Masterclass" 
-            location="New Delhi" 
-            img="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=500"
-          />
-          <EventCard 
-            date="Jan 18" 
-            title="Private Art & Vineyard Gala" 
-            location="Nashik" 
-            img="https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&q=80&w=500"
-          />
+        <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm hover:border-[#EDA300]/30 transition-colors">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 bg-[#1a0525] rounded-lg flex items-center justify-center">
+              <Calendar className="w-4 h-4 text-[#EDA300]" />
+            </div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Events</p>
+          </div>
+          <p className="text-3xl font-serif text-[#EDA300]">
+            {loading ? '—' : events.length}
+          </p>
+          <p className="text-[10px] text-gray-300 mt-1 uppercase tracking-wider">Upcoming Events</p>
         </div>
-      </section>
 
-      {/* PREMIUM BANNER: Bold Contrast */}
-      <div className="bg-[#360e4a] rounded-sm p-10 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-[0.02] rounded-full -mr-32 -mt-32"></div>
-        <div className="relative z-10 space-y-4">
-          <span className="text-[9px] font-bold text-[#EDA300] tracking-[0.5em] uppercase">Exclusive Insight</span>
-          <h2 className="text-3xl font-serif text-white max-w-md">2026 Leadership Outlook: The Mid-Year Synthesis</h2>
-          <p className="text-gray-400 text-xs font-light max-w-sm">Curated data on sector-specific growth across 12 tier-one cities.</p>
+        <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm hover:border-[#EDA300]/30 transition-colors">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 bg-[#1a0525] rounded-lg flex items-center justify-center">
+              <Calendar className="w-4 h-4 text-[#EDA300]" />
+            </div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Bookings</p>
+          </div>
+          <p className="text-3xl font-serif text-[#2a0b38]">
+            {loading ? '—' : bookedEvents.length}
+          </p>
+          <p className="text-[10px] text-gray-300 mt-1 uppercase tracking-wider">Events Booked</p>
         </div>
-        <button className="bg-[#EDA300] text-[#360e4a] px-8 py-4 text-[10px] font-bold uppercase tracking-widest hover:scale-105 transition-transform shrink-0">
-          Download Report
+
+        <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm hover:border-[#EDA300]/30 transition-colors">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 bg-[#1a0525] rounded-lg flex items-center justify-center">
+              <BookOpen className="w-4 h-4 text-[#EDA300]" />
+            </div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Resources</p>
+          </div>
+          <p className="text-3xl font-serif text-[#2a0b38]">
+            {loading ? '—' : resources.length}
+          </p>
+          <p className="text-[10px] text-gray-300 mt-1 uppercase tracking-wider">Available</p>
+        </div>
+      </div>
+
+      {/* ── UPCOMING EVENTS */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+            Upcoming Events
+          </h3>
+          <button
+            onClick={() => navigate('/events')}
+            className="text-[10px] font-bold text-[#EDA300] uppercase tracking-widest border-b border-[#EDA300]/30 pb-1 hover:border-[#EDA300] transition-colors"
+          >
+            View All
+          </button>
+        </div>
+
+        {loading ? (
+          <p className="text-gray-400 text-sm">Loading events...</p>
+        ) : upcomingEvents.length === 0 ? (
+          <div className="bg-white border border-gray-100 rounded-xl p-12 text-center shadow-sm">
+            <Calendar className="w-10 h-10 text-gray-200 mx-auto mb-4" />
+            <p className="text-gray-400 text-sm">No upcoming events.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {upcomingEvents.map(event => (
+              <button
+                key={event.id}
+                onClick={() => navigate(`/events/${event.id}`)}
+                className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#2a0b38]/20 transition-all text-left group"
+              >
+                <div className="bg-[#1a0525] px-6 py-5">
+                  <p className="text-[#EDA300] text-[9px] font-bold uppercase tracking-widest mb-1">
+                    {new Date(event.date).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'long', year: 'numeric' })}
+                  </p>
+                  <p className="text-white text-3xl font-serif font-bold">
+                    {new Date(event.date).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric' })}
+                  </p>
+                </div>
+                <div className="p-6 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <h4 className="text-sm font-serif text-[#2a0b38] group-hover:text-[#1a0525] leading-tight">
+                      {event.title}
+                    </h4>
+                    {event.is_booked === 1 && (
+                      <span className="text-[9px] font-bold uppercase bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-0.5 rounded-full shrink-0">
+                        Booked
+                      </span>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    {event.location && (
+                      <p className="flex items-center gap-1.5 text-gray-400 text-xs">
+                        <MapPin className="w-3 h-3" />
+                        {event.location}
+                      </p>
+                    )}
+                    {event.time && (
+                      <p className="flex items-center gap-1.5 text-gray-400 text-xs">
+                        <Clock className="w-3 h-3" />
+                        {formatTime(event.time)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── PREMIUM BANNER */}
+      <div className="bg-[#1a0525] rounded-xl p-10 flex items-center justify-between gap-8 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#EDA300] opacity-[0.03] rounded-full -mr-32 -mt-32" />
+        <div className="relative z-10 space-y-3">
+          <p className="text-[#EDA300] text-[9px] font-bold uppercase tracking-widest">Exclusive Access</p>
+          <h2 className="text-3xl font-serif text-white max-w-md">
+            2026 Leadership Outlook
+          </h2>
+          <p className="text-gray-400 text-sm max-w-sm">
+            Curated insights and resources exclusively for ILC members.
+          </p>
+        </div>
+        <button
+          onClick={() => navigate('/resources')}
+          className="bg-[#EDA300] hover:bg-[#d4920a] text-[#1a0525] px-8 py-4 text-[10px] font-bold uppercase tracking-widest transition-all shrink-0 rounded-sm"
+        >
+          View Resources
         </button>
       </div>
     </div>
   );
 };
-
-/* --- SUB-COMPONENTS FOR CLEANLINESS --- */
-
-const StatCard = ({ label, value, sub, highlight }) => (
-  <div className="bg-white border border-gray-100 p-6 rounded-sm hover:border-[#EDA300]/30 transition-colors">
-    <p className="text-[9px] font-bold tracking-widest text-gray-400 uppercase mb-4">{label}</p>
-    <h4 className={`text-3xl font-serif mb-1 ${highlight ? 'text-[#EDA300]' : 'text-[#360e4a]'}`}>{value}</h4>
-    <p className="text-[10px] text-gray-300 font-medium uppercase tracking-tighter">{sub}</p>
-  </div>
-);
-
-const EventCard = ({ date, title, location, img }) => (
-  <div className="group cursor-pointer">
-    <div className="relative h-64 w-full overflow-hidden rounded-sm mb-4">
-      <img src={img} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={title} />
-      <div className="absolute top-4 left-4 bg-white px-3 py-1">
-        <p className="text-[10px] font-bold text-[#360e4a] uppercase tracking-tighter">{date}</p>
-      </div>
-    </div>
-    <div className="space-y-2">
-      <h4 className="text-lg font-serif text-[#360e4a] group-hover:text-[#EDA300] transition-colors">{title}</h4>
-      <div className="flex items-center gap-2 text-gray-400 text-[10px] font-bold uppercase tracking-widest">
-        <MapPin size={10} className="text-[#EDA300]" /> {location}
-      </div>
-    </div>
-  </div>
-);
 
 export default CeoDashboard;
