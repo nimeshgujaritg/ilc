@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Users, Check, Clock, Phone, Mail } from 'lucide-react';
+import { Search, Users } from 'lucide-react';
 import client from '../api/client';
 import { useAuthStore } from '../store/authStore';
 
@@ -12,7 +12,7 @@ const LinkedInIcon = () => (
 const MembersPage = () => {
   const { user } = useAuthStore();
   const [members, setMembers] = useState([]);
-  const [connections, setConnections] = useState([]);
+const [connections, setConnections] = useState([])
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState([]);
   const [actionLoading, setActionLoading] = useState(null);
@@ -20,19 +20,15 @@ const MembersPage = () => {
 
   useEffect(() => {
     const fetchAll = async () => {
-      try {
-        const [memRes, connRes] = await Promise.all([
-          client.get('/admin/members-list'),
-          client.get('/connections'),
-        ]);
-        setMembers(memRes.data.members);
-        setConnections(connRes.data.connections);
-      } catch (err) {
-        console.error('Failed to load members');
-      } finally {
-        setLoading(false);
-      }
-    };
+  try {
+    const res = await client.get('/admin/members-list');
+    setMembers(res.data.members);
+  } catch (err) {
+    console.error('Failed to load members');
+  } finally {
+    setLoading(false);
+  }
+};
     fetchAll();
   }, []);
 
@@ -96,9 +92,9 @@ const MembersPage = () => {
   });
 
   // Pending requests I need to act on
-  const pendingReceived = connections.filter(
-    c => c.receiver_id === user.id && c.status === 'PENDING'
-  );
+  // const pendingReceived = connections.filter(
+  //   c => c.receiver_id === user.id && c.status === 'PENDING'
+  // );
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -120,7 +116,7 @@ const MembersPage = () => {
       </div>
 
       {/* Pending requests banner */}
-      {pendingReceived.length > 0 && (
+      {/* {pendingReceived.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600 mb-3">
             {pendingReceived.length} Pending Connection Request{pendingReceived.length > 1 ? 's' : ''}
@@ -161,7 +157,7 @@ const MembersPage = () => {
             ))}
           </div>
         </div>
-      )}
+      )} */}
 
       <div className="relative w-full max-w-md">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 w-4 h-4" />
@@ -187,124 +183,50 @@ const MembersPage = () => {
         </div>
       )}
 
-      {filtered.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filtered.map(member => {
-            const connStatus = getConnectionStatus(member.id);
-            const isMe = member.id === user.id;
-            const isConnected = connStatus?.type === 'ACCEPTED';
+{filtered.length > 0 && (
+  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    {filtered.map(member => (
+      <div
+        key={member.id}
+        className="bg-white border border-gray-100 rounded-xl p-6 text-center hover:shadow-md hover:border-[#2a0b38]/20 transition-all group"
+      >
+        {member.photo_url ? (
+          <img
+            src={member.photo_url}
+            alt={member.name}
+            className="w-16 h-16 rounded-full object-cover mx-auto mb-4 ring-4 ring-gray-50"
+          />
+        ) : (
+          <div className="w-16 h-16 rounded-full bg-[#1a0525] text-white flex items-center justify-center font-bold text-lg mx-auto mb-4 ring-4 ring-gray-50">
+            {member.initials}
+          </div>
+        )}
 
-            return (
-              <div
-                key={member.id}
-                className="bg-white border border-gray-100 rounded-xl p-6 text-center hover:shadow-md hover:border-[#2a0b38]/20 transition-all group"
-              >
-                {/* Photo */}
-                {member.photo_url ? (
-                  <img
-                    src={member.photo_url}
-                    alt={member.name}
-                    className="w-16 h-16 rounded-full object-cover mx-auto mb-4 ring-4 ring-gray-50"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-[#1a0525] text-white flex items-center justify-center font-bold text-lg mx-auto mb-4 ring-4 ring-gray-50">
-                    {member.initials}
-                  </div>
-                )}
+        <h4 className="text-sm font-bold text-[#2a0b38] mb-1 leading-tight">
+          {member.name}
+        </h4>
+        {member.title && (
+          <p className="text-[10px] text-[#EDA300] font-bold uppercase tracking-widest leading-tight">
+            {member.title}
+          </p>
+        )}
+        <p className="text-[10px] text-gray-300 mt-2">
+          Member since {new Date(member.created_at).getFullYear()}
+        </p>
 
-                <h4 className="text-sm font-bold text-[#2a0b38] mb-1 leading-tight">
-                  {member.name}
-                </h4>
-                {member.title && (
-                  <p className="text-[10px] text-[#EDA300] font-bold uppercase tracking-widest leading-tight">
-                    {member.title}
-                  </p>
-                )}
-                <p className="text-[10px] text-gray-300 mt-2">
-                  Member since {new Date(member.created_at).getFullYear()}
-                </p>
-
-                {/* Contact details — only if connected */}
-                {isConnected && (
-                  <div className="mt-3 space-y-1.5 text-left border-t border-gray-50 pt-3">
-                    {member.phone && (
-                      <button
-                        onClick={() => window.open(`tel:${member.phone}`)}
-                        className="flex items-center gap-2 text-[10px] text-gray-500 hover:text-[#2a0b38] transition-colors w-full"
-                      >
-                        <Phone className="w-3 h-3 shrink-0 text-[#EDA300]" />
-                        <span className="truncate">{member.phone}</span>
-                      </button>
-                    )}
-                    {member.email && (
-                      <button
-                        onClick={() => window.open(`mailto:${member.email}`)}
-                        className="flex items-center gap-2 text-[10px] text-gray-500 hover:text-[#2a0b38] transition-colors w-full"
-                      >
-                        <Mail className="w-3 h-3 shrink-0 text-[#EDA300]" />
-                        <span className="truncate">{member.email}</span>
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {/* LinkedIn */}
-                {member.linkedin_url && (
-                  <button
-                    onClick={() => window.open(member.linkedin_url, '_blank')}
-                    className="mt-3 flex items-center gap-1.5 mx-auto text-[10px] font-bold uppercase tracking-widest text-blue-500 hover:text-blue-600 transition-colors"
-                  >
-                    <LinkedInIcon />
-                    LinkedIn
-                  </button>
-                )}
-
-                {/* Connection button */}
-                {!isMe && (
-                  <div className="mt-4">
-                    {isConnected ? (
-                      <span className="flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-emerald-600">
-                        <Check className="w-3 h-3" />
-                        Connected
-                      </span>
-                    ) : connStatus?.type === 'SENT' ? (
-                      <span className="flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                        <Clock className="w-3 h-3" />
-                        Pending
-                      </span>
-                    ) : connStatus?.type === 'RECEIVED' ? (
-                      <div className="flex gap-1 justify-center">
-                        <button
-                          onClick={() => handleAccept(member.id)}
-                          disabled={actionLoading === member.id}
-                          className="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 text-[10px] font-bold px-2 py-1 rounded-sm uppercase tracking-widest transition-colors disabled:opacity-50"
-                        >
-                          {actionLoading === member.id ? '...' : 'Accept'}
-                        </button>
-                        <button
-                          onClick={() => handleReject(member.id)}
-                          disabled={actionLoading === member.id}
-                          className="bg-red-50 hover:bg-red-100 text-red-500 text-[10px] font-bold px-2 py-1 rounded-sm uppercase tracking-widest transition-colors disabled:opacity-50"
-                        >
-                          Decline
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => handleConnect(member.id)}
-                        disabled={actionLoading === member.id}
-                        className="w-full bg-[#1a0525] hover:bg-[#2a0b38] text-white text-[10px] font-bold px-3 py-2 rounded-sm uppercase tracking-widest transition-colors disabled:opacity-50"
-                      >
-                        {actionLoading === member.id ? '...' : 'Connect'}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+        {member.linkedin_url && (
+          <button
+            onClick={() => window.open(member.linkedin_url, '_blank')}
+            className="mt-4 flex items-center gap-1.5 mx-auto text-[10px] font-bold uppercase tracking-widest text-blue-500 hover:text-blue-600 transition-colors"
+          >
+            <LinkedInIcon />
+            Connect on LinkedIn
+          </button>
+        )}
+      </div>
+    ))}
+  </div>
+)}
     </div>
   );
 };

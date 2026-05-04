@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Phone, User, Calendar, Lock, ChevronRight, Shield } from 'lucide-react';
+import { Mail, Phone, User, Calendar, Lock, ChevronRight, Shield, Pencil, X } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import client from '../api/client';
-
+import ImageUpload from '../components/ImageUpload';
 const CeoProfile = () => {
   const { user: authUser, changePassword } = useAuthStore();
   const [profile, setProfile] = useState(null);
@@ -13,7 +13,10 @@ const CeoProfile = () => {
   const [pwLoading, setPwLoading] = useState(false);
   const [pwSuccess, setPwSuccess] = useState('');
   const [showPwSection, setShowPwSection] = useState(false);
-
+const [editMode, setEditMode] = useState(false);
+const [editForm, setEditForm] = useState({});
+const [editLoading, setEditLoading] = useState(false);
+const [editSuccess, setEditSuccess] = useState('');
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -61,6 +64,20 @@ const CeoProfile = () => {
   );
 
   const spoc = profile?.spoc;
+  const handleEditSave = async () => {
+  setEditLoading(true);
+  setEditSuccess('');
+  try {
+    const res = await client.patch('/auth/profile', editForm);
+    setProfile(p => ({ ...p, ...res.data.user }));
+    setEditSuccess('Profile updated successfully');
+    setTimeout(() => { setEditMode(false); setEditSuccess(''); }, 1500);
+  } catch (err) {
+    alert(err.response?.data?.error || 'Failed to update profile');
+  } finally {
+    setEditLoading(false);
+  }
+};
   const isAdmin = authUser?.role === 'ADMIN';
 
   const memberSince = profile?.created_at
@@ -83,27 +100,116 @@ const CeoProfile = () => {
         <div className="flex items-start gap-8">
 
           {/* Photo */}
-          <div className="shrink-0">
-            {profile?.photo_url ? (
-              <img
-                src={profile.photo_url}
-                alt={profile.name}
-                className="w-24 h-24 rounded-full object-cover ring-4 ring-white shadow-md"
-                onError={e => { e.target.style.display = 'none'; }}
-              />
-            ) : (
-              <div className="w-24 h-24 rounded-full bg-[#1a0525] text-white flex items-center justify-center text-2xl font-bold ring-4 ring-white shadow-md">
-                {profile?.initials}
-              </div>
-            )}
-          </div>
+          <div className="shrink-0 relative">
+  {editMode ? (
+    <div className="space-y-2">
+      {editForm.photo_url ? (
+        <img src={editForm.photo_url} alt="Preview" className="w-24 h-24 rounded-full object-cover ring-4 ring-white shadow-md" />
+      ) : (
+        <div className="w-24 h-24 rounded-full bg-[#1a0525] text-white flex items-center justify-center text-2xl font-bold ring-4 ring-white shadow-md">
+          {profile?.initials}
+        </div>
+      )}
+      <ImageUpload
+        value={editForm.photo_url || ''}
+        onChange={url => setEditForm(p => ({ ...p, photo_url: url }))}
+        label=""
+      />
+    </div>
+  ) : (
+    <>
+      {profile?.photo_url ? (
+        <img
+          src={profile.photo_url}
+          alt={profile.name}
+          className="w-24 h-24 rounded-full object-cover ring-4 ring-white shadow-md"
+          onError={e => { e.target.style.display = 'none'; }}
+        />
+      ) : (
+        <div className="w-24 h-24 rounded-full bg-[#1a0525] text-white flex items-center justify-center text-2xl font-bold ring-4 ring-white shadow-md">
+          {profile?.initials}
+        </div>
+      )}
+    </>
+  )}
+</div>
 
           {/* Details */}
           <div className="flex-1 space-y-5">
-            <div>
-              <h2 className="text-3xl font-serif text-[#2a0b38]">{profile?.name}</h2>
-              <p className="text-[#EDA300] text-[11px] font-bold uppercase tracking-widest mt-1">{profile?.title}</p>
-            </div>
+            {editSuccess && (
+  <div className="px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-sm">
+    <p className="text-[12px] text-emerald-700">{editSuccess}</p>
+  </div>
+)}
+            <div className="flex items-start justify-between">
+  <div>
+    {editMode ? (
+      <div className="space-y-2">
+        <input
+          type="text"
+          value={editForm.name || ''}
+          onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))}
+          placeholder="Full Name"
+          className="block w-full px-3 py-2 border border-gray-200 rounded-sm text-lg font-serif text-[#2a0b38] outline-none focus:ring-1 focus:ring-[#2a0b38]"
+        />
+        <input
+          type="text"
+          value={editForm.title || ''}
+          onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))}
+          placeholder="Title / Designation"
+          className="block w-full px-3 py-2 border border-gray-200 rounded-sm text-sm outline-none focus:ring-1 focus:ring-[#2a0b38]"
+        />
+        <input
+          type="text"
+          value={editForm.phone || ''}
+          onChange={e => setEditForm(p => ({ ...p, phone: e.target.value }))}
+          placeholder="Phone Number"
+          className="block w-full px-3 py-2 border border-gray-200 rounded-sm text-sm outline-none focus:ring-1 focus:ring-[#2a0b38]"
+        />
+      </div>
+    ) : (
+      <>
+        <h2 className="text-3xl font-serif text-[#2a0b38]">{profile?.name}</h2>
+        <p className="text-[#EDA300] text-[11px] font-bold uppercase tracking-widest mt-1">{profile?.title}</p>
+      </>
+    )}
+  </div>
+  <div className="flex items-center gap-2 ml-4">
+    {editMode ? (
+      <>
+        <button
+          onClick={handleEditSave}
+          disabled={editLoading}
+          className="bg-[#2a0b38] hover:bg-[#1a0525] text-white px-4 py-2 rounded-sm text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-50"
+        >
+          {editLoading ? 'Saving...' : 'Save'}
+        </button>
+        <button
+          onClick={() => { setEditMode(false); setEditSuccess(''); }}
+          className="text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </>
+    ) : (
+      <button
+        onClick={() => {
+          setEditForm({
+            name: profile?.name || '',
+            title: profile?.title || '',
+            phone: profile?.phone || '',
+            photo_url: profile?.photo_url || '',
+          });
+          setEditMode(true);
+        }}
+        className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-[#2a0b38] transition-colors"
+      >
+        <Pencil className="w-3 h-3" />
+        Edit
+      </button>
+    )}
+  </div>
+</div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-3">
@@ -130,7 +236,7 @@ const CeoProfile = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 col-span-2">
+              <div className={`flex items-center gap-3 col-span-2 ${editMode ? 'hidden' : ''}`}>
                 <div className="w-4 h-4 shrink-0 flex items-center justify-center">
                   <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-300 fill-current">
                     <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z M4 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
